@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>GigShield – Safety Companion for Gig Workers</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fb;
+            color: #333;
+        }
+
+        /* NAVBAR */
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 60px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        nav h2 {
+            color: #2c7be5;
+            margin: 0;
+        }
+
+        nav a {
+            text-decoration: none;
+            margin-left: 20px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        /* HERO */
+
+        .hero {
+            background: linear-gradient(135deg, #2c7be5, #5aa7ff);
+            color: white;
+            padding: 100px 20px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 42px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .hero p {
+            font-size: 18px;
+            max-width: 700px;
+            margin: 20px auto;
+            line-height: 1.6;
+        }
+
+        .hero button {
+            padding: 14px 30px;
+            font-size: 16px;
+            border: none;
+            background: white;
+            color: #2c7be5;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* SECTIONS */
+
+        .section {
+            padding: 70px 10%;
+            text-align: center;
+        }
+
+        .section h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .section p {
+            max-width: 800px;
+            margin: auto;
+            line-height: 1.7;
+        }
+
+        /* CARDS */
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            text-align: left;
+        }
+
+        .card h3 {
+            color: #2c7be5;
+        }
+
+        /* STATS */
+
+        .stats {
+            background: #2c7be5;
+            color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 60px 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+            margin: 20px;
+        }
+
+        .stat h2 {
+            font-size: 40px;
+            margin: 0;
+        }
+
+        /* CTA */
+
+        .cta {
+            background: #111;
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .cta button {
+            padding: 15px 35px;
+            font-size: 18px;
+            background: #2c7be5;
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* FOOTER */
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <h2>GigShield</h2>
+
+        <div>
+            <a href="#">Home</a>
+            <a href="#">Features</a>
+            <a href="#">Community</a>
+            <a href="#">Contact</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Protecting India’s Gig Workforce with AI-Driven Safety</h1>
+
+        <p>
+            GigShield is a digital safety companion designed to support gig workers
+            through real-time monitoring, financial transparency,
+            and community-driven protection systems.
+        </p>
+
+        <button>Join the Platform</button>
+    </section>
+
+    <section class="section">
+        <h2>The Problem</h2>
+
+        <p>
+            India’s gig economy is expected to reach nearly 50 million workers by 2026.
+            Despite this growth, gig workers frequently face payment disputes,
+            unsafe working environments, harassment, and lack of social security.
+            Many accidents during work hours go uncompensated and workers often lack
+            reliable systems for real-time support or reporting issues.
+        </p>
+    </section>
+
+    <section class="section">
+        <h2>How GigShield Helps</h2>
+
+        <div class="cards">
+
+            <div class="card">
+                <h3>Real-Time Safety Monitoring</h3>
+                <p>
+                    Workers can log shifts with geolocation check-ins and enable safety tracking,
+                    ensuring their work sessions are recorded and monitored for risk.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Emergency SOS Alerts</h3>
+                <p>
+                    In dangerous situations, workers can trigger instant SOS alerts
+                    to unions, NGOs, or trusted contacts through push notifications and SMS.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>AI Risk Detection</h3>
+                <p>
+                    Machine learning identifies unusual earnings patterns,
+                    frequent disputes, or safety incidents to help workers
+                    detect risks early.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Community Support Forums</h3>
+                <p>
+                    Anonymous peer forums allow workers to share experiences,
+                    report harassment, and warn others about unsafe areas.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Payout Verification</h3>
+                <p>
+                    Employer-uploaded payment data is compared with worker logs
+                    to ensure fair compensation and transparency.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Safety Heatmaps</h3>
+                <p>
+                    Community safety reports create real-time maps
+                    highlighting high-risk zones across cities.
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="stats">
+
+        <div class="stat">
+            <h2>50M+</h2>
+            <p>Projected Gig Workers by 2026</p>
+        </div>
+
+        <div class="stat">
+            <h2>24/7</h2>
+            <p>Safety Monitoring</p>
+        </div>
+
+        <div class="stat">
+            <h2>AI</h2>
+            <p>Risk Detection System</p>
+        </div>
+
+        <div class="stat">
+            <h2>Nationwide</h2>
+            <p>Community Protection</p>
+        </div>
+
+    </section>
+
+    <section class="cta">
+
+        <h2>Empowering Gig Workers Across India</h2>
+
+        <p>
+            GigShield combines AI insights, real-time safety tools,
+            and community collaboration to protect millions of gig workers.
+        </p>
+
+        <button>Get Started</button>
+
+    </section>
+
+    <footer>
+        <p>© 2026 GigShield | AI Safety Platform for Gig Workers</p>
+    </footer>
+
+</body>
+
+</html>
