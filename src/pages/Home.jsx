@@ -1,120 +1,246 @@
+import { useEffect, useRef, useState } from "react";
 import "../styles/Home.css";
 
+const features = [
+  {
+    icon: "📍",
+    title: "Shift Logging & Geolocation",
+    desc: "Seamlessly log work sessions with GPS check-ins. Every shift is recorded so no hour goes unaccounted.",
+  },
+  {
+    icon: "🆘",
+    title: "Emergency SOS Alerts",
+    desc: "One tap sends instant alerts to unions, NGOs, or trusted contacts via push notification and SMS.",
+  },
+  {
+    icon: "🤖",
+    title: "AI Risk Detection",
+    desc: "Detects irregular earnings, anomaly patterns, and workplace risks before they escalate.",
+  },
+  {
+    icon: "💬",
+    title: "Anonymous Peer Forums",
+    desc: "Share experiences of harassment, accidents, or safety concerns without fear — moderated and secure.",
+  },
+  {
+    icon: "💰",
+    title: "Payout Verification",
+    desc: "Employer-uploaded records matched against your logs. Dispute underpayments with evidence.",
+  },
+  {
+    icon: "🗺️",
+    title: "Safety Heatmaps",
+    desc: "Community-sourced reports visualized across cities, helping you identify and avoid high-risk zones.",
+  },
+  {
+    icon: "🌱",
+    title: "Carbon Footprint Tracker",
+    desc: "Monitor travel patterns and wellness insights — work smarter, live sustainably.",
+  },
+  {
+    icon: "📶",
+    title: "Offline Functionality",
+    desc: "Core safety features work even in low-connectivity zones — because protection can't wait for Wi-Fi.",
+  },
+];
+
+const stats = [
+  { value: "50M+", label: "Projected Gig Workers by 2026" },
+  { value: "24/7", label: "Real-Time Safety Monitoring" },
+  { value: "AI", label: "Predictive Risk Detection" },
+  { value: "100%", label: "Anonymous Community Support" },
+];
+
+const problems = [
+  { icon: "⚠️", text: "Payment disputes with no recourse" },
+  { icon: "🚧", text: "Unsafe working conditions & accidents" },
+  { icon: "😶", text: "Workplace harassment left unreported" },
+  { icon: "🏥", text: "No social security or compensation" },
+  { icon: "📵", text: "Zero real-time safety assistance" },
+  { icon: "🔇", text: "Silenced workers with no community" },
+];
+
+function useInView(threshold = 0.15) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setInView(true); },
+      { threshold }
+    );
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+  return [ref, inView];
+}
+
 export default function Home() {
+  const [heroRef, heroIn] = useInView(0.1);
+  const [problemRef, problemIn] = useInView(0.1);
+  const [featuresRef, featuresIn] = useInView(0.05);
+  const [statsRef, statsIn] = useInView(0.1);
+  const [ctaRef, ctaIn] = useInView(0.1);
+
   return (
-    <>
-      {/* NAVBAR */}
-      <nav>
-        <h2>GigShield</h2>
-        <div>
+    <div className="gs-root">
+      {/* ─── NAVBAR ─── */}
+      <nav className="gs-nav">
+        <div className="gs-nav-logo">
+          <span className="gs-shield-icon">🛡</span>
+          <span className="gs-logo-text">GigShield</span>
+        </div>
+        <div className="gs-nav-links">
           <a href="#">Home</a>
           <a href="#">Features</a>
           <a href="#">Community</a>
           <a href="#">Contact</a>
+          <button className="gs-nav-cta">Join Now</button>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section className="hero">
-        <h1>Protecting India’s Gig Workforce with AI-Driven Safety</h1>
-        <p>
-          GigShield is a digital safety companion designed to support gig workers
-          through real-time monitoring, financial transparency, and
-          community-driven protection systems.
+      {/* ─── HERO ─── */}
+      <section className={`gs-hero ${heroIn ? "gs-visible" : ""}`} ref={heroRef}>
+        <div className="gs-hero-bg">
+          <div className="gs-grid-overlay" />
+          <div className="gs-orb gs-orb-1" />
+          <div className="gs-orb gs-orb-2" />
+        </div>
+        <div className="gs-hero-badge">🇮🇳 Built for India's Gig Workers</div>
+        <h1 className="gs-hero-title">
+          Safety. Transparency.<br />
+          <span className="gs-accent">Community.</span>
+        </h1>
+        <p className="gs-hero-sub">
+          GigShield is an AI-powered digital safety companion — delivering real-time
+          monitoring, financial protection, and anonymous peer support to India's
+          50 million gig workers.
         </p>
-        <button onClick={() => alert("Welcome to GigShield 🚀")}>
-          Join the Platform
-        </button>
+        <div className="gs-hero-actions">
+          <button className="gs-btn-primary" onClick={() => alert("Welcome to GigShield 🚀")}>
+            Join the Platform
+          </button>
+          <a href="#" className="gs-btn-ghost">See How It Works →</a>
+        </div>
+        <div className="gs-hero-trust">
+          <span>✓ Offline-ready</span>
+          <span>✓ Anonymous & Private</span>
+          <span>✓ Union & NGO Integrated</span>
+        </div>
       </section>
 
-      {/* PROBLEM */}
-      <section className="section">
-        <h2>The Problem</h2>
-        <p>
-          India’s gig economy is expected to reach nearly 50 million workers by
-          2026. Despite this growth, gig workers frequently face payment disputes,
-          unsafe working environments, harassment, and lack of social security.
+      {/* ─── PROBLEM ─── */}
+      <section className={`gs-section gs-problem ${problemIn ? "gs-visible" : ""}`} ref={problemRef}>
+        <div className="gs-section-tag">The Challenge</div>
+        <h2 className="gs-section-title">
+          India's gig workers are growing fast —<br />
+          <span className="gs-accent">their protections are not.</span>
+        </h2>
+        <p className="gs-section-sub">
+          With nearly 50 million workers projected by 2026, the gig economy boom
+          hides a crisis of exploitation, silence, and vulnerability. Existing platforms
+          like eShram only register workers — they don't protect them.
         </p>
-      </section>
-
-      {/* FEATURES */}
-      <section className="section">
-        <h2>How GigShield Helps</h2>
-
-        <div className="cards">
-          {features.map((f, i) => (
-            <div key={i} className="card">
-              <h3>{f.title}</h3>
-              <p>{f.desc}</p>
+        <div className="gs-problem-grid">
+          {problems.map((p, i) => (
+            <div
+              className="gs-problem-item"
+              key={i}
+              style={{ animationDelay: `${i * 0.08}s` }}
+            >
+              <span className="gs-problem-icon">{p.icon}</span>
+              <span>{p.text}</span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* STATS */}
-      <section className="stats">
-        <div className="stat">
-          <h2>50M+</h2>
-          <p>Projected Gig Workers by 2026</p>
-        </div>
+      {/* ─── STATS ─── */}
+      <section className={`gs-stats-band ${statsIn ? "gs-visible" : ""}`} ref={statsRef}>
+        {stats.map((s, i) => (
+          <div className="gs-stat" key={i} style={{ animationDelay: `${i * 0.1}s` }}>
+            <div className="gs-stat-value">{s.value}</div>
+            <div className="gs-stat-label">{s.label}</div>
+          </div>
+        ))}
+      </section>
 
-        <div className="stat">
-          <h2>24/7</h2>
-          <p>Safety Monitoring</p>
-        </div>
-
-        <div className="stat">
-          <h2>AI</h2>
-          <p>Risk Detection System</p>
-        </div>
-
-        <div className="stat">
-          <h2>Nationwide</h2>
-          <p>Community Protection</p>
+      {/* ─── FEATURES ─── */}
+      <section className={`gs-section gs-features ${featuresIn ? "gs-visible" : ""}`} ref={featuresRef}>
+        <div className="gs-section-tag">Platform Features</div>
+        <h2 className="gs-section-title">
+          Everything a gig worker needs —<br />
+          <span className="gs-accent">in one shield.</span>
+        </h2>
+        <div className="gs-features-grid">
+          {features.map((f, i) => (
+            <div
+              className="gs-feature-card"
+              key={i}
+              style={{ animationDelay: `${i * 0.07}s` }}
+            >
+              <div className="gs-feature-icon">{f.icon}</div>
+              <h3 className="gs-feature-title">{f.title}</h3>
+              <p className="gs-feature-desc">{f.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="cta">
-        <h2>Empowering Gig Workers Across India</h2>
-        <p>
-          GigShield combines AI insights, real-time safety tools, and community
-          collaboration.
-        </p>
-        <button>Get Started</button>
+      {/* ─── HOW IT WORKS ─── */}
+      <section className="gs-section gs-how">
+        <div className="gs-section-tag">How It Works</div>
+        <h2 className="gs-section-title">Simple. Powerful. <span className="gs-accent">Always On.</span></h2>
+        <div className="gs-steps">
+          {[
+            { step: "01", title: "Log your shift", desc: "Check in with geolocation when you start work. Offline? No problem — it syncs automatically." },
+            { step: "02", title: "Stay protected", desc: "AI monitors earnings anomalies and environmental risks in real time, alerting you proactively." },
+            { step: "03", title: "Raise your voice", desc: "Post anonymously in community forums, report unsafe zones, or trigger an SOS with one tap." },
+            { step: "04", title: "Get resolution", desc: "Unions and NGOs receive dispute reports with verified evidence — faster outcomes, fairer pay." },
+          ].map((s, i) => (
+            <div className="gs-step" key={i}>
+              <div className="gs-step-num">{s.step}</div>
+              <div className="gs-step-body">
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
-      {/* FOOTER */}
-      <footer>
-        <p>© 2026 GigShield | AI Safety Platform for Gig Workers</p>
+      {/* ─── CTA ─── */}
+      <section className={`gs-cta ${ctaIn ? "gs-visible" : ""}`} ref={ctaRef}>
+        <div className="gs-cta-inner">
+          <div className="gs-cta-tag">Join the Movement</div>
+          <h2>
+            Every gig worker deserves a<br />
+            <span className="gs-accent">shield on their side.</span>
+          </h2>
+          <p>
+            GigShield is free, private, and built for India's real working conditions.
+            Whether you drive, deliver, or freelance — we've got your back.
+          </p>
+          <div className="gs-cta-actions">
+            <button className="gs-btn-primary">Get Started Free</button>
+            <button className="gs-btn-outline">For Unions & NGOs →</button>
+          </div>
+        </div>
+        <div className="gs-cta-orb" />
+      </section>
+
+      {/* ─── FOOTER ─── */}
+      <footer className="gs-footer">
+        <div className="gs-footer-brand">
+          <span className="gs-shield-icon">🛡</span>
+          <span className="gs-logo-text">GigShield</span>
+        </div>
+        <p className="gs-footer-copy">© 2026 GigShield · AI Safety Platform for India's Gig Workers · Privacy-First · Offline-Ready</p>
+        <div className="gs-footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms</a>
+          <a href="#">Contact</a>
+        </div>
       </footer>
-    </>
+    </div>
   );
 }
-
-const features = [
-  {
-    title: "Real-Time Safety Monitoring",
-    desc: "Workers can log shifts with geolocation check-ins and safety tracking.",
-  },
-  {
-    title: "Emergency SOS Alerts",
-    desc: "Trigger instant alerts to unions or trusted contacts.",
-  },
-  {
-    title: "AI Risk Detection",
-    desc: "Detect unusual earnings patterns and risks.",
-  },
-  {
-    title: "Community Support Forums",
-    desc: "Anonymous discussions for safety awareness.",
-  },
-  {
-    title: "Payout Verification",
-    desc: "Compare payments with logs for transparency.",
-  },
-  {
-    title: "Safety Heatmaps",
-    desc: "Highlight high-risk zones across cities.",
-  },
-];
