@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/Home.css";
 
 const features = [
@@ -65,7 +66,9 @@ function useInView(threshold = 0.15) {
   const [inView, setInView] = useState(false);
   useEffect(() => {
     const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setInView(true); },
+      ([entry]) => {
+        if (entry.isIntersecting) setInView(true);
+      },
       { threshold }
     );
     if (ref.current) obs.observe(ref.current);
@@ -75,6 +78,7 @@ function useInView(threshold = 0.15) {
 }
 
 export default function Home() {
+  const navigate = useNavigate();
   const [heroRef, heroIn] = useInView(0.1);
   const [problemRef, problemIn] = useInView(0.1);
   const [featuresRef, featuresIn] = useInView(0.05);
@@ -94,7 +98,13 @@ export default function Home() {
           <a href="#">Features</a>
           <a href="#">Community</a>
           <a href="#">Contact</a>
-          <button className="gs-nav-cta">Join Now</button>
+          {/* Login link → navigates to /login */}
+          <button className="gs-nav-login" onClick={() => navigate("/login")}>
+            Login
+          </button>
+          <button className="gs-nav-cta" onClick={() => navigate("/login")}>
+            Join Now
+          </button>
         </div>
       </nav>
 
@@ -116,7 +126,7 @@ export default function Home() {
           50 million gig workers.
         </p>
         <div className="gs-hero-actions">
-          <button className="gs-btn-primary" onClick={() => alert("Welcome to GigShield 🚀")}>
+          <button className="gs-btn-primary" onClick={() => navigate("/login")}>
             Join the Platform
           </button>
           <a href="#" className="gs-btn-ghost">See How It Works →</a>
@@ -129,7 +139,10 @@ export default function Home() {
       </section>
 
       {/* ─── PROBLEM ─── */}
-      <section className={`gs-section gs-problem ${problemIn ? "gs-visible" : ""}`} ref={problemRef}>
+      <section
+        className={`gs-section gs-problem ${problemIn ? "gs-visible" : ""}`}
+        ref={problemRef}
+      >
         <div className="gs-section-tag">The Challenge</div>
         <h2 className="gs-section-title">
           India's gig workers are growing fast —<br />
@@ -155,7 +168,10 @@ export default function Home() {
       </section>
 
       {/* ─── STATS ─── */}
-      <section className={`gs-stats-band ${statsIn ? "gs-visible" : ""}`} ref={statsRef}>
+      <section
+        className={`gs-stats-band ${statsIn ? "gs-visible" : ""}`}
+        ref={statsRef}
+      >
         {stats.map((s, i) => (
           <div className="gs-stat" key={i} style={{ animationDelay: `${i * 0.1}s` }}>
             <div className="gs-stat-value">{s.value}</div>
@@ -165,7 +181,10 @@ export default function Home() {
       </section>
 
       {/* ─── FEATURES ─── */}
-      <section className={`gs-section gs-features ${featuresIn ? "gs-visible" : ""}`} ref={featuresRef}>
+      <section
+        className={`gs-section gs-features ${featuresIn ? "gs-visible" : ""}`}
+        ref={featuresRef}
+      >
         <div className="gs-section-tag">Platform Features</div>
         <h2 className="gs-section-title">
           Everything a gig worker needs —<br />
@@ -189,13 +208,31 @@ export default function Home() {
       {/* ─── HOW IT WORKS ─── */}
       <section className="gs-section gs-how">
         <div className="gs-section-tag">How It Works</div>
-        <h2 className="gs-section-title">Simple. Powerful. <span className="gs-accent">Always On.</span></h2>
+        <h2 className="gs-section-title">
+          Simple. Powerful. <span className="gs-accent">Always On.</span>
+        </h2>
         <div className="gs-steps">
           {[
-            { step: "01", title: "Log your shift", desc: "Check in with geolocation when you start work. Offline? No problem — it syncs automatically." },
-            { step: "02", title: "Stay protected", desc: "AI monitors earnings anomalies and environmental risks in real time, alerting you proactively." },
-            { step: "03", title: "Raise your voice", desc: "Post anonymously in community forums, report unsafe zones, or trigger an SOS with one tap." },
-            { step: "04", title: "Get resolution", desc: "Unions and NGOs receive dispute reports with verified evidence — faster outcomes, fairer pay." },
+            {
+              step: "01",
+              title: "Log your shift",
+              desc: "Check in with geolocation when you start work. Offline? No problem — it syncs automatically.",
+            },
+            {
+              step: "02",
+              title: "Stay protected",
+              desc: "AI monitors earnings anomalies and environmental risks in real time, alerting you proactively.",
+            },
+            {
+              step: "03",
+              title: "Raise your voice",
+              desc: "Post anonymously in community forums, report unsafe zones, or trigger an SOS with one tap.",
+            },
+            {
+              step: "04",
+              title: "Get resolution",
+              desc: "Unions and NGOs receive dispute reports with verified evidence — faster outcomes, fairer pay.",
+            },
           ].map((s, i) => (
             <div className="gs-step" key={i}>
               <div className="gs-step-num">{s.step}</div>
@@ -221,7 +258,9 @@ export default function Home() {
             Whether you drive, deliver, or freelance — we've got your back.
           </p>
           <div className="gs-cta-actions">
-            <button className="gs-btn-primary">Get Started Free</button>
+            <button className="gs-btn-primary" onClick={() => navigate("/login")}>
+              Get Started Free
+            </button>
             <button className="gs-btn-outline">For Unions & NGOs →</button>
           </div>
         </div>
@@ -234,7 +273,9 @@ export default function Home() {
           <span className="gs-shield-icon">🛡</span>
           <span className="gs-logo-text">GigShield</span>
         </div>
-        <p className="gs-footer-copy">© 2026 GigShield · AI Safety Platform for India's Gig Workers · Privacy-First · Offline-Ready</p>
+        <p className="gs-footer-copy">
+          © 2026 GigShield · AI Safety Platform for India's Gig Workers · Privacy-First · Offline-Ready
+        </p>
         <div className="gs-footer-links">
           <a href="#">Privacy Policy</a>
           <a href="#">Terms</a>
