@@ -1,1241 +1,402 @@
 import { useState } from "react";
+import "../styles/Dashboard.css";
 
-const materialIcon = (name, fill = 0, extraStyle = {}) => (
+const NAV_LINKS = [
+  { icon: "dashboard", label: "Home", id: "home" },
+  { icon: "payments", label: "Earnings", id: "earnings" },
+  { icon: "history", label: "Shift History", id: "history" },
+  { icon: "group", label: "Community", id: "community" },
+  { icon: "warning", label: "Alerts", id: "alerts" },
+  { icon: "person", label: "Profile", id: "profile" },
+];
+
+const Icon = ({ name, fill = 0, className = "", style = {} }) => (
   <span
-    className="material-symbols-outlined"
+    className={`material-symbols-outlined ${className}`}
     style={{
       fontVariationSettings: `'FILL' ${fill}, 'wght' 400, 'GRAD' 0, 'opsz' 24`,
-      verticalAlign: "middle",
-      ...extraStyle,
+      ...style,
     }}
   >
     {name}
   </span>
 );
 
-const navLinks = [
-  { icon: "dashboard", label: "Home", active: true },
-  { icon: "payments", label: "Earnings" },
-  { icon: "history", label: "Shift History" },
-  { icon: "group", label: "Community" },
-  { icon: "warning", label: "Alerts" },
-  { icon: "person", label: "Profile" },
-];
+// SVG map placeholder — no broken external images
+function MapPlaceholder({ small = false }) {
+  return (
+    <div className={`db-map-placeholder ${small ? "db-map-placeholder--small" : ""}`}>
+      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" className="db-map-svg">
+        {/* Grid lines */}
+        {[0,1,2,3,4,5,6,7,8].map(i => (
+          <line key={`v${i}`} x1={i*50} y1="0" x2={i*50} y2="220" stroke="rgba(42,108,44,0.1)" strokeWidth="1"/>
+        ))}
+        {[0,1,2,3,4].map(i => (
+          <line key={`h${i}`} x1="0" y1={i*55} x2="400" y2={i*55} stroke="rgba(42,108,44,0.1)" strokeWidth="1"/>
+        ))}
+        {/* Roads */}
+        <path d="M0,110 Q100,90 200,110 Q300,130 400,110" stroke="rgba(42,108,44,0.2)" strokeWidth="3" fill="none"/>
+        <path d="M200,0 Q210,55 200,110 Q190,165 200,220" stroke="rgba(42,108,44,0.2)" strokeWidth="3" fill="none"/>
+        <path d="M0,60 Q80,55 160,65 Q240,75 320,60 Q360,55 400,60" stroke="rgba(42,108,44,0.12)" strokeWidth="2" fill="none"/>
+        <path d="M0,160 Q100,155 200,165 Q300,175 400,160" stroke="rgba(42,108,44,0.12)" strokeWidth="2" fill="none"/>
+        <path d="M80,0 Q85,110 80,220" stroke="rgba(42,108,44,0.1)" strokeWidth="1.5" fill="none"/>
+        <path d="M320,0 Q315,110 320,220" stroke="rgba(42,108,44,0.1)" strokeWidth="1.5" fill="none"/>
+        {/* Heatmap blobs */}
+        <ellipse cx="200" cy="110" rx="60" ry="40" fill="rgba(42,108,44,0.18)"/>
+        <ellipse cx="200" cy="110" rx="30" ry="20" fill="rgba(42,108,44,0.25)"/>
+        <ellipse cx="310" cy="75" rx="35" ry="25" fill="rgba(172,244,164,0.3)"/>
+        <ellipse cx="95" cy="155" rx="28" ry="20" fill="rgba(168,56,54,0.15)"/>
+        <ellipse cx="340" cy="165" rx="22" ry="16" fill="rgba(172,244,164,0.2)"/>
+        {/* Location pin */}
+        <circle cx="200" cy="110" r="8" fill="#2a6c2c"/>
+        <circle cx="200" cy="110" r="16" fill="rgba(42,108,44,0.2)"/>
+        <circle cx="200" cy="110" r="26" fill="rgba(42,108,44,0.08)"/>
+        {/* Other pins */}
+        <circle cx="310" cy="75" r="5" fill="#acf4a4" stroke="#2a6c2c" strokeWidth="1.5"/>
+        <circle cx="95" cy="155" r="5" fill="rgba(168,56,54,0.7)" stroke="#a83836" strokeWidth="1.5"/>
+      </svg>
+    </div>
+  );
+}
 
 export default function GigShieldDashboard() {
+  const [activeNav, setActiveNav] = useState("home");
   const [mapMode, setMapMode] = useState("SAFETY");
-  const [alertAcknowledged, setAlertAcknowledged] = useState(false);
+  const [alertAck, setAlertAck] = useState(false);
+  const [shiftOn, setShiftOn] = useState(true);
 
   return (
-    <>
-      {/* Google Fonts */}
+    <div className="db-root">
+      {/* Material Symbols */}
       <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet"
-      />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
         rel="stylesheet"
       />
 
-      <style>{`
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-          vertical-align: middle;
-        }
-        .btn-primary-gradient {
-          background: linear-gradient(135deg, #2a6c2c 0%, #1d5f21 100%);
-        }
-        .glass-panel {
-          background: rgba(221, 228, 227, 0.6);
-          backdrop-filter: blur(20px);
-        }
-        .heatmap-overlay {
-          background:
-            radial-gradient(circle at 40% 40%, rgba(42, 108, 44, 0.4) 0%, transparent 40%),
-            radial-gradient(circle at 70% 60%, rgba(172, 244, 164, 0.5) 0%, transparent 35%),
-            radial-gradient(circle at 20% 80%, rgba(168, 56, 54, 0.2) 0%, transparent 30%);
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-      `}</style>
-
-      <div
-        style={{
-          fontFamily: "Inter, sans-serif",
-          backgroundColor: "#f8faf9",
-          color: "#2d3433",
-          minHeight: "100vh",
-        }}
-      >
-        {/* ── Top Nav ── */}
-        <header
-          style={{
-            position: "fixed",
-            top: 0,
-            zIndex: 40,
-            width: "100%",
-            height: "80px",
-            padding: "0 40px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            backgroundColor: "#f8faf9",
-            borderBottom: "none",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "48px" }}>
-            <span
-              style={{
-                fontSize: "24px",
-                fontWeight: 700,
-                letterSpacing: "-0.025em",
-                color: "#0D7C66",
-                fontFamily: "Manrope, sans-serif",
-              }}
-            >
-              GigShield
-            </span>
-            <div style={{ position: "relative", width: "384px" }}>
-              <span
-                className="material-symbols-outlined"
-                style={{
-                  position: "absolute",
-                  left: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "#757c7b",
-                  fontSize: "20px",
-                }}
-              >
-                search
-              </span>
-              <input
-                type="text"
-                placeholder="Search safety reports, earnings, or shifts..."
-                style={{
-                  width: "100%",
-                  background: "transparent",
-                  border: "none",
-                  borderBottom: "1px solid rgba(172,179,178,0.2)",
-                  outline: "none",
-                  paddingLeft: "40px",
-                  paddingTop: "8px",
-                  paddingBottom: "8px",
-                  fontSize: "14px",
-                  color: "#2d3433",
-                }}
-              />
-            </div>
+      {/* ── TOP NAV ── */}
+      <header className="db-topnav">
+        <div className="db-topnav-left">
+          <div className="db-brand">
+            <span className="db-brand-icon">🛡</span>
+            <span className="db-brand-name">GigShield</span>
           </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-            {["notifications", "help_outline", "settings"].map((icon) => (
-              <button
-                key={icon}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "8px",
-                  borderRadius: "9999px",
-                  color: "#596060",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {materialIcon(icon)}
-              </button>
-            ))}
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "9999px",
-                overflow: "hidden",
-                marginLeft: "8px",
-                outline: "2px solid rgba(172,244,164,0.3)",
-              }}
-            >
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBy1sVbpS5kjKtIvBL37amEmwpnTLOovh-1OT78-LoIkM26ZhUmosH0l2s5p7_0CAPY5Pm2mhNns8F5rUkXJK63ydwsQyVswyoMJ8zOO11rTffhbHUWHErcQoh7d_-X2L4rNGBrucEUFA7wGh3eiX72G80akAtjurtzmD1hoSGxxaW5FFbJvwEJsNm88IYmWKsyagPwhoOgjC_SqFm2y4qCwtQNadAxqXpwEvzVPSJ3EWgVunEEIqvjQW0Y_7phDc6A4W8Zx4GDJ0"
-                alt="User Profile"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            </div>
+          <div className="db-search-wrap">
+            <Icon name="search" className="db-search-icon" />
+            <input
+              type="text"
+              placeholder="Search reports, earnings, shifts…"
+              className="db-search"
+            />
           </div>
-        </header>
+        </div>
+        <div className="db-topnav-right">
+          <button className="db-icon-btn db-icon-btn--notif">
+            <Icon name="notifications" />
+            <span className="db-notif-dot" />
+          </button>
+          <button className="db-icon-btn"><Icon name="help_outline" /></button>
+          <button className="db-icon-btn"><Icon name="settings" /></button>
+          <div className="db-avatar">AK</div>
+        </div>
+      </header>
 
-        {/* ── Sidebar ── */}
-        <aside
-          style={{
-            position: "fixed",
-            left: 0,
-            height: "100%",
-            width: "288px",
-            paddingTop: "112px",
-            paddingBottom: "32px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            backgroundColor: "#f0f4f3",
-          }}
-        >
-          <div style={{ padding: "0 40px", marginBottom: "32px" }}>
-            <h3
-              style={{
-                fontFamily: "Manrope, sans-serif",
-                fontWeight: 600,
-                fontSize: "18px",
-                color: "#2d3433",
-              }}
-            >
+      {/* ── SIDEBAR ── */}
+      <aside className="db-sidebar">
+        <div className="db-sidebar-user">
+          <div className="db-sidebar-avatar">AK</div>
+          <div>
+            <div className="db-sidebar-name">Arjun Kumar</div>
+            <div className="db-sidebar-tier">
+              <span className="db-tier-dot" />
               Professional Shield
-            </h3>
-            <p
-              style={{
-                fontSize: "11px",
-                color: "#596060",
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                marginTop: "4px",
-              }}
+            </div>
+          </div>
+        </div>
+
+        <nav className="db-nav">
+          {NAV_LINKS.map(({ icon, label, id }) => (
+            <button
+              key={id}
+              className={`db-nav-item ${activeNav === id ? "db-nav-item--active" : ""}`}
+              onClick={() => setActiveNav(id)}
             >
-              Active Protection
-            </p>
+              <Icon name={icon} fill={activeNav === id ? 1 : 0} className="db-nav-icon" />
+              <span className="db-nav-label">{label}</span>
+              {id === "alerts" && (
+                <span className="db-nav-badge">2</span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        <div className="db-sos-btn-wrap">
+          <button className="db-sos-btn">
+            <Icon name="emergency_share" fill={1} className="db-sos-icon" />
+            <span>Emergency SOS</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── MAIN CONTENT ── */}
+      <main className="db-main">
+
+        {/* Page header */}
+        <div className="db-page-header">
+          <div className="db-page-header-text">
+            <span className="db-page-eyebrow">Member Dashboard</span>
+            <h1 className="db-page-title">Good afternoon, Arjun.</h1>
+            <p className="db-page-sub">Your shift is active and monitored by GigShield Guardian.</p>
+          </div>
+          <button
+            className={`db-shift-toggle ${shiftOn ? "db-shift-toggle--on" : "db-shift-toggle--off"}`}
+            onClick={() => setShiftOn(v => !v)}
+          >
+            <span className="db-shift-dot" />
+            {shiftOn ? "SHIFT ON" : "SHIFT OFF"}
+          </button>
+        </div>
+
+        {/* Bento grid */}
+        <div className="db-grid">
+
+          {/* ── Current Session ── */}
+          <div className="db-card db-card--session">
+            <div className="db-card-bg-circle" />
+            <div className="db-session-content">
+              <div className="db-session-left">
+                <span className="db-card-eyebrow">Current Session</span>
+                <div className="db-session-time">
+                  <span className="db-session-hrs">02:15</span>
+                  <span className="db-session-unit">HRS</span>
+                </div>
+                <div className="db-session-meta">
+                  <div className="db-session-meta-item">
+                    <span className="db-meta-label">Active Location</span>
+                    <span className="db-meta-value">
+                      <Icon name="location_on" style={{ fontSize: 14 }} />
+                      Koramangala, BLR
+                    </span>
+                  </div>
+                  <div className="db-session-meta-divider" />
+                  <div className="db-session-meta-item">
+                    <span className="db-meta-label">Battery Level</span>
+                    <span className="db-meta-value db-meta-value--green">
+                      <Icon name="battery_charging_full" style={{ fontSize: 14 }} />
+                      88%
+                    </span>
+                  </div>
+                  <div className="db-session-meta-divider" />
+                  <div className="db-session-meta-item">
+                    <span className="db-meta-label">Distance Today</span>
+                    <span className="db-meta-value">
+                      <Icon name="route" style={{ fontSize: 14 }} />
+                      34.2 km
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <MapPlaceholder small />
+            </div>
           </div>
 
-          <nav
-            style={{
-              flexGrow: 1,
-              display: "flex",
-              flexDirection: "column",
-              gap: "4px",
-            }}
-          >
-            {navLinks.map(({ icon, label, active }) =>
-              active ? (
-                <a
-                  key={label}
-                  href="#"
-                  style={{
-                    backgroundColor: "#ffffff",
-                    color: "#2a6c2c",
-                    fontWeight: 700,
-                    borderRadius: "9999px 0 0 9999px",
-                    marginLeft: "16px",
-                    paddingLeft: "24px",
-                    paddingTop: "12px",
-                    paddingBottom: "12px",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                    textDecoration: "none",
-                    transform: "translateX(4px)",
-                  }}
-                >
-                  {materialIcon(icon)}
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                    }}
-                  >
-                    {label}
-                  </span>
-                </a>
-              ) : (
-                <a
-                  key={label}
-                  href="#"
-                  style={{
-                    paddingLeft: "40px",
-                    paddingTop: "12px",
-                    paddingBottom: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                    color: "#2d3433",
-                    textDecoration: "none",
-                    transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "#2a6c2c")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "#2d3433")
-                  }
-                >
-                  {materialIcon(icon)}
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                    }}
-                  >
-                    {label}
-                  </span>
-                </a>
-              )
-            )}
-          </nav>
-
-          <div style={{ padding: "0 32px", marginTop: "auto" }}>
-            <button
-              className="glass-panel"
-              style={{
-                width: "100%",
-                padding: "16px",
-                borderRadius: "12px",
-                border: "1px solid rgba(168,56,54,0.2)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "4px",
-                cursor: "pointer",
-              }}
-            >
-              {materialIcon("emergency_share", 1, { color: "#a83836", fontSize: "24px" })}
-              <span
-                style={{
-                  color: "#a83836",
-                  fontFamily: "Manrope, sans-serif",
-                  fontWeight: 700,
-                  fontSize: "14px",
-                }}
-              >
-                Emergency Help
+          {/* ── Earnings ── */}
+          <div className="db-card db-card--earnings">
+            <div className="db-card-header">
+              <span className="db-card-eyebrow">Today's Earnings</span>
+              <Icon name="trending_up" className="db-earnings-trend" />
+            </div>
+            <div className="db-earnings-amount">
+              <span className="db-earnings-symbol">₹</span>
+              <span className="db-earnings-value">850.00</span>
+            </div>
+            <div className="db-earnings-bar-wrap">
+              <div className="db-earnings-bar">
+                <div className="db-earnings-bar-fill" style={{ width: "68%" }} />
+              </div>
+              <span className="db-earnings-bar-label">68% of daily goal</span>
+            </div>
+            <div className="db-earnings-footer">
+              <span className="db-earnings-deliveries">
+                <Icon name="local_shipping" style={{ fontSize: 14 }} />
+                3 deliveries
               </span>
+              <a href="#" className="db-link">View Details →</a>
+            </div>
+          </div>
+
+          {/* ── Safety Alert ── */}
+          <div className="db-card db-card--alert">
+            <div className="db-alert-header">
+              <Icon name="report" fill={1} className="db-alert-icon" />
+              <span className="db-alert-tag">Proximity Alert</span>
+            </div>
+            <h4 className="db-alert-title">Unsafe Area Warning</h4>
+            <p className="db-alert-body">
+              High incident rate reported near HSR Layout Sector 2. Maintain high visibility and avoid dark alleys after 9PM.
+            </p>
+            <button
+              className={`db-ack-btn ${alertAck ? "db-ack-btn--done" : ""}`}
+              onClick={() => setAlertAck(true)}
+            >
+              {alertAck ? "✓ Acknowledged" : "Acknowledge"}
             </button>
           </div>
-        </aside>
 
-        {/* ── Main ── */}
-        <main
-          style={{
-            marginLeft: "288px",
-            marginTop: "80px",
-            padding: "40px",
-            minHeight: "100vh",
-            backgroundColor: "#f8faf9",
-          }}
-        >
-          <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
-            {/* Page Header */}
-            <header
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "flex-end",
-                justifyContent: "space-between",
-                marginBottom: "40px",
-                gap: "24px",
-                flexWrap: "wrap",
-              }}
-            >
-              <div>
-                <span
-                  style={{
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    color: "#2a6c2c",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.2em",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Member Dashboard
-                </span>
-                <h1
-                  style={{
-                    fontSize: "36px",
-                    fontFamily: "Manrope, sans-serif",
-                    fontWeight: 800,
-                    color: "#2d3433",
-                    letterSpacing: "-0.025em",
-                    margin: 0,
-                  }}
-                >
-                  Good afternoon, Arjun.
-                </h1>
-                <p
-                  style={{
-                    color: "#596060",
-                    marginTop: "8px",
-                    fontSize: "18px",
-                  }}
-                >
-                  Your shift is active and monitored by GigShield Guardian.
-                </p>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div
-                  style={{
-                    backgroundColor: "#acf4a4",
-                    color: "#004b0f",
-                    padding: "12px 24px",
-                    borderRadius: "9999px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <span
-                    className="animate-pulse"
-                    style={{
-                      width: "10px",
-                      height: "10px",
-                      backgroundColor: "#004b0f",
-                      borderRadius: "9999px",
-                      display: "inline-block",
-                    }}
+          {/* ── Safety Score ── */}
+          <div className="db-card db-card--score">
+            <div className="db-score-header">
+              <span className="db-card-eyebrow">Safety Score</span>
+              <span className="db-score-tier">GOLD TIER</span>
+            </div>
+            <div className="db-score-body">
+              <div className="db-score-ring-wrap">
+                <svg viewBox="0 0 36 36" className="db-score-ring">
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none" stroke="rgba(42,108,44,0.12)" strokeWidth="3"
                   />
-                  <span
-                    style={{
-                      fontFamily: "Manrope, sans-serif",
-                      fontWeight: 700,
-                      fontSize: "14px",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    SHIFT ON
-                  </span>
-                </div>
-              </div>
-            </header>
-
-            {/* Bento Grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "2fr 1fr",
-                gap: "32px",
-                alignItems: "start",
-              }}
-            >
-              {/* Left Column */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
-                {/* Shift Status Card */}
-                <div
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderRadius: "12px",
-                    padding: "32px",
-                    boxShadow: "0px 12px 32px rgba(45,52,51,0.04)",
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
-                      width: "128px",
-                      height: "128px",
-                      backgroundColor: "rgba(42,108,44,0.05)",
-                      borderRadius: "9999px",
-                      marginRight: "-64px",
-                      marginTop: "-64px",
-                    }}
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none" stroke="#2a6c2c" strokeWidth="3"
+                    strokeDasharray="92, 100" strokeLinecap="round"
                   />
-                  <div style={{ display: "flex", gap: "32px", justifyContent: "space-between", flexWrap: "wrap" }}>
-                    <div style={{ flex: 1 }}>
-                      <p
-                        style={{
-                          fontSize: "11px",
-                          color: "#596060",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.15em",
-                          marginBottom: "24px",
-                        }}
-                      >
-                        Current Session
-                      </p>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-                        <span
-                          style={{
-                            fontSize: "60px",
-                            fontFamily: "Manrope, sans-serif",
-                            fontWeight: 800,
-                            color: "#2d3433",
-                            lineHeight: 1,
-                          }}
-                        >
-                          02:15
-                        </span>
-                        <span
-                          style={{
-                            fontSize: "20px",
-                            fontFamily: "Manrope, sans-serif",
-                            fontWeight: 600,
-                            color: "#596060",
-                          }}
-                        >
-                          HRS
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          marginTop: "32px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "24px",
-                        }}
-                      >
-                        <div style={{ display: "flex", flexDirection: "column" }}>
-                          <span
-                            style={{
-                              fontSize: "10px",
-                              color: "#757c7b",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.1em",
-                            }}
-                          >
-                            Active Location
-                          </span>
-                          <span
-                            style={{
-                              fontWeight: 600,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              marginTop: "4px",
-                            }}
-                          >
-                            {materialIcon("location_on", 0, { fontSize: "16px" })}
-                            Koramangala, BLR
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            width: "1px",
-                            height: "32px",
-                            backgroundColor: "rgba(172,179,178,0.3)",
-                          }}
-                        />
-                        <div style={{ display: "flex", flexDirection: "column" }}>
-                          <span
-                            style={{
-                              fontSize: "10px",
-                              color: "#757c7b",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.1em",
-                            }}
-                          >
-                            Battery Level
-                          </span>
-                          <span
-                            style={{
-                              fontWeight: 600,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              marginTop: "4px",
-                              color: "#2a6c2c",
-                            }}
-                          >
-                            {materialIcon("battery_charging_full", 0, { fontSize: "16px", color: "#2a6c2c" })}
-                            88%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        width: "256px",
-                        height: "192px",
-                        borderRadius: "8px",
-                        overflow: "hidden",
-                        position: "relative",
-                        boxShadow: "inset 0 2px 8px rgba(0,0,0,0.1)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <img
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUp-rEMpmWXwkkU5InmdpY2vxOZvWx68zTwY-zt6H4NIj3_dVDeylPRHKwQR5MsyZAEqNunl7UKrRvSAlMlaL72qt6TqYibcq_6_4gHCZmBIBZEv3Eo8OhhdKCplmNlKqg82_4IfgxqyOkE6_z6BLw3KczNHkVVW4SzXSEDTnIJdMPdi95FhevbcDlfEMUbwTVsqs2LvT_dCDQyK31kULHMuQJhbY-4hdnZlU-H55sAnKmk7ytJWLioL9c0uS8Bg4GTYMPF9GsHJA"
-                        alt="City map"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          filter: "grayscale(1)",
-                          opacity: 0.4,
-                        }}
-                      />
-                      <div
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          backgroundColor: "rgba(42,108,44,0.1)",
-                          mixBlendMode: "multiply",
-                        }}
-                      />
-                      <div
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "16px",
-                            height: "16px",
-                            backgroundColor: "#2a6c2c",
-                            borderRadius: "9999px",
-                            boxShadow: "0 0 0 16px rgba(42,108,44,0.2)",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Hero Row */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
-                  {/* Earnings */}
-                  <div
-                    style={{
-                      backgroundColor: "#ffffff",
-                      borderRadius: "12px",
-                      padding: "32px",
-                      boxShadow: "0px 12px 32px rgba(45,52,51,0.04)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        marginBottom: "24px",
-                      }}
-                    >
-                      <p
-                        style={{
-                          fontSize: "11px",
-                          color: "#596060",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.15em",
-                        }}
-                      >
-                        Today's Earnings
-                      </p>
-                      {materialIcon("trending_up", 0, { color: "#2a6c2c" })}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-                      <span
-                        style={{
-                          fontSize: "18px",
-                          fontFamily: "Manrope, sans-serif",
-                          fontWeight: 700,
-                          color: "#2d3433",
-                        }}
-                      >
-                        ₹
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "36px",
-                          fontFamily: "Manrope, sans-serif",
-                          fontWeight: 800,
-                          color: "#2d3433",
-                        }}
-                      >
-                        850.00
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "24px",
-                        paddingTop: "24px",
-                        borderTop: "1px solid rgba(172,179,178,0.1)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span style={{ fontSize: "14px", color: "#596060" }}>
-                        3 Deliveries completed
-                      </span>
-                      <a
-                        href="#"
-                        style={{
-                          fontSize: "14px",
-                          fontWeight: 700,
-                          color: "#2a6c2c",
-                          textDecoration: "none",
-                        }}
-                      >
-                        View Details
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Safety Alert */}
-                  <div
-                    style={{
-                      backgroundColor: "#ffffff",
-                      borderRadius: "12px",
-                      padding: "32px",
-                      boxShadow: "0px 12px 32px rgba(45,52,51,0.04)",
-                      borderLeft: "4px solid rgba(168,56,54,0.4)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        marginBottom: "16px",
-                        color: "#a83836",
-                      }}
-                    >
-                      {materialIcon("report", 1, { fontSize: "16px", color: "#a83836" })}
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.15em",
-                        }}
-                      >
-                        Proximity Alert
-                      </span>
-                    </div>
-                    <h4
-                      style={{
-                        fontFamily: "Manrope, sans-serif",
-                        fontWeight: 700,
-                        fontSize: "18px",
-                        color: "#2d3433",
-                        margin: 0,
-                      }}
-                    >
-                      Unsafe Area Warning
-                    </h4>
-                    <p
-                      style={{
-                        fontSize: "14px",
-                        color: "#596060",
-                        marginTop: "8px",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      High incident rate reported in HSR Layout Sector 2. Maintain high
-                      visibility and avoid dark alleys.
-                    </p>
-                    <div style={{ marginTop: "24px" }}>
-                      <button
-                        onClick={() => setAlertAcknowledged(true)}
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          color: alertAcknowledged ? "#2a6c2c" : "#2d3433",
-                          border: `1px solid ${alertAcknowledged ? "#2a6c2c" : "rgba(172,179,178,1)"}`,
-                          padding: "8px 16px",
-                          borderRadius: "9999px",
-                          background: "none",
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                        }}
-                      >
-                        {alertAcknowledged ? "✓ Acknowledged" : "Acknowledge"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Heat Map */}
-                <div
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderRadius: "12px",
-                    padding: "32px",
-                    boxShadow: "0px 12px 32px rgba(45,52,51,0.04)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "24px",
-                    }}
-                  >
-                    <div>
-                      <h3
-                        style={{
-                          fontFamily: "Manrope, sans-serif",
-                          fontWeight: 700,
-                          fontSize: "20px",
-                          margin: 0,
-                        }}
-                      >
-                        City Heat Map
-                      </h3>
-                      <p
-                        style={{
-                          fontSize: "11px",
-                          color: "#596060",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.15em",
-                          marginTop: "4px",
-                        }}
-                      >
-                        Real-time Safety & Activity
-                      </p>
-                    </div>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      {["SAFETY", "DEMAND"].map((mode) => (
-                        <button
-                          key={mode}
-                          onClick={() => setMapMode(mode)}
-                          style={{
-                            backgroundColor:
-                              mapMode === mode ? "rgba(42,108,44,0.1)" : "#f8faf9",
-                            color: mapMode === mode ? "#2a6c2c" : "#596060",
-                            fontSize: "10px",
-                            fontWeight: 700,
-                            padding: "6px 12px",
-                            borderRadius: "9999px",
-                            border:
-                              mapMode === mode
-                                ? "1px solid rgba(42,108,44,0.2)"
-                                : "1px solid rgba(172,179,178,0.2)",
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                          }}
-                        >
-                          {mode}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      position: "relative",
-                      width: "100%",
-                      aspectRatio: "21/9",
-                      borderRadius: "12px",
-                      overflow: "hidden",
-                      boxShadow: "inset 0 2px 8px rgba(0,0,0,0.08)",
-                      border: "1px solid rgba(172,179,178,0.1)",
-                    }}
-                  >
-                    <img
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUp-rEMpmWXwkkU5InmdpY2vxOZvWx68zTwY-zt6H4NIj3_dVDeylPRHKwQR5MsyZAEqNunl7UKrRvSAlMlaL72qt6TqYibcq_6_4gHCZmBIBZEv3Eo8OhhdKCplmNlKqg82_4IfgxqyOkE6_z6BLw3KczNHkVVW4SzXSEDTnIJdMPdi95FhevbcDlfEMUbwTVsqs2LvT_dCDQyK31kULHMuQJhbY-4hdnZlU-H55sAnKmk7ytJWLioL9c0uS8Bg4GTYMPF9GsHJA"
-                      alt="City map"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        filter: "grayscale(1) contrast(1.25)",
-                        opacity: 0.3,
-                      }}
-                    />
-                    <div
-                      className="heatmap-overlay"
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        mixBlendMode: "multiply",
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        backgroundColor: "rgba(42,108,44,0.05)",
-                        pointerEvents: "none",
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: "16px",
-                        left: "16px",
-                        backgroundColor: "rgba(255,255,255,0.8)",
-                        backdropFilter: "blur(12px)",
-                        padding: "12px",
-                        borderRadius: "8px",
-                        border: "1px solid rgba(172,179,178,0.2)",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "9px",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                          color: "#757c7b",
-                          display: "block",
-                          marginBottom: "6px",
-                        }}
-                      >
-                        Map Legend
-                      </span>
-                      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                        {[
-                          { color: "#2a6c2c", label: "Secure" },
-                          { color: "#acf4a4", label: "Moderate" },
-                          { color: "rgba(168,56,54,0.6)", label: "Caution" },
-                        ].map(({ color, label }) => (
-                          <div
-                            key={label}
-                            style={{ display: "flex", alignItems: "center", gap: "6px" }}
-                          >
-                            <div
-                              style={{
-                                width: "10px",
-                                height: "10px",
-                                borderRadius: "9999px",
-                                backgroundColor: color,
-                                boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
-                              }}
-                            />
-                            <span style={{ fontSize: "10px", fontWeight: 600 }}>
-                              {label}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: "16px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      fontSize: "11px",
-                      color: "#596060",
-                    }}
-                  >
-                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 500 }}>
-                      {materialIcon("update", 0, { fontSize: "14px", color: "#2a6c2c" })}
-                      Auto-updates every 5 mins based on rider reports
-                    </span>
-                    <a
-                      href="#"
-                      style={{
-                        fontWeight: 700,
-                        color: "#2a6c2c",
-                        textDecoration: "none",
-                      }}
-                    >
-                      Open Interactive Map
-                    </a>
-                  </div>
-                </div>
+                </svg>
+                <div className="db-score-num">92</div>
               </div>
-
-              {/* Right Column */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
-                {/* Emergency SOS */}
-                <div
-                  style={{
-                    backgroundColor: "#a83836",
-                    color: "#fff7f6",
-                    borderRadius: "12px",
-                    padding: "32px",
-                    boxShadow: "0 8px 24px rgba(168,56,54,0.15)",
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
-                      width: "192px",
-                      height: "192px",
-                      backgroundColor: "rgba(255,255,255,0.05)",
-                      borderRadius: "9999px",
-                      marginRight: "-96px",
-                      marginTop: "-96px",
-                      pointerEvents: "none",
-                    }}
-                  />
-                  <h3
-                    style={{
-                      fontFamily: "Manrope, sans-serif",
-                      fontWeight: 800,
-                      fontSize: "24px",
-                      margin: "0 0 8px",
-                    }}
-                  >
-                    Emergency Response
-                  </h3>
-                  <p
-                    style={{
-                      fontSize: "14px",
-                      color: "rgba(255,247,246,0.8)",
-                      marginBottom: "32px",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    One-tap connection to GigShield 24/7 Security Dispatch and Local Police.
-                  </p>
-                  <button
-                    style={{
-                      width: "100%",
-                      backgroundColor: "#fff7f6",
-                      color: "#a83836",
-                      padding: "16px",
-                      borderRadius: "12px",
-                      fontFamily: "Manrope, sans-serif",
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      fontSize: "14px",
-                      border: "none",
-                      cursor: "pointer",
-                      transition: "transform 0.1s",
-                    }}
-                    onMouseDown={(e) =>
-                      (e.currentTarget.style.transform = "scale(0.98)")
-                    }
-                    onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                  >
-                    Initiate SOS Protocol
-                  </button>
-                </div>
-
-                {/* Expert Advice */}
-                <div
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderRadius: "12px",
-                    padding: "32px",
-                    boxShadow: "0px 12px 32px rgba(45,52,51,0.04)",
-                  }}
-                >
-                  <h3
-                    style={{
-                      fontFamily: "Manrope, sans-serif",
-                      fontWeight: 700,
-                      fontSize: "20px",
-                      marginBottom: "24px",
-                    }}
-                  >
-                    Expert Advice
-                  </h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                    {[
-                      {
-                        src: "https://lh3.googleusercontent.com/aida-public/AB6AXuBREjkYUFDfTAFQJoVtIrKQWy8d7EtxrfrLR0oTEuO-FciZegdBsCgBEWxDFZxQvZGXd7ONt6xY_XI4NrQoWzGWh40txCVZ051V6B2uMggRqJ_8UeivfutjN7pzd-trdaXVbgki8KTB-9OSbXluOvd7D8YS2_tn4sJFD-lNRHwV2y17s6tX66zGTOt6IjVOcybUQMFRtebWTCgoxg3j7K48I0qCfbP0NAbGsqVUDjOCMF_4duCI7J7GOTOtwL1G86Om-hTbh5mVTFo",
-                        badge: "LEGAL",
-                        badgeBg: "#b2e8f8",
-                        badgeColor: "#1e5764",
-                        text: "Understanding your rights during night shifts.",
-                        alt: "Motorcycle handlebar at night",
-                      },
-                      {
-                        src: "https://lh3.googleusercontent.com/aida-public/AB6AXuAVCGnv1FNHWAqQ5JaJMRLqCSYa-_BgkNVTsZQ_QQXhI7D98lHbZF6FvhAjqbW9zh-rmS4SuKx2zU9mkoQDRNp-IkdWKqumSWQdHcQqmPqWwXxHDhuY9Ucvp88NF0QQIFstAcazG2-s_-ygkf_ym-icnRSBIkxnDYDeJdLfDuDqcsjLG0WpHRa1MorPq2QxD46cUNViCg3dBpDmzn9pxufpQpDTHHcFlFQ9CSnLeExlYV-Tlf6UO10yVe5sLMZKnp9tm5-vCCiND04",
-                        badge: "WELLNESS",
-                        badgeBg: "#acf4a4",
-                        badgeColor: "#1b5e20",
-                        text: "5-minute posture reset for long delivery routes.",
-                        alt: "Yoga pose at home",
-                      },
-                    ].map(({ src, badge, badgeBg, badgeColor, text, alt }) => (
-                      <div
-                        key={badge}
-                        style={{ borderRadius: "12px", overflow: "hidden", cursor: "pointer" }}
-                      >
-                        <div
-                          style={{ height: "128px", width: "100%", position: "relative" }}
-                        >
-                          <img
-                            src={src}
-                            alt={alt}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                              transition: "transform 0.5s",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.05)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                          />
-                          <div
-                            style={{
-                              position: "absolute",
-                              inset: 0,
-                              background:
-                                "linear-gradient(to top, rgba(0,0,0,0.6), transparent)",
-                            }}
-                          />
-                          <span
-                            style={{
-                              position: "absolute",
-                              bottom: "12px",
-                              left: "12px",
-                              backgroundColor: badgeBg,
-                              color: badgeColor,
-                              fontSize: "10px",
-                              fontWeight: 700,
-                              padding: "4px 8px",
-                              borderRadius: "4px",
-                            }}
-                          >
-                            {badge}
-                          </span>
-                        </div>
-                        <p
-                          style={{
-                            marginTop: "12px",
-                            fontWeight: 700,
-                            fontSize: "14px",
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {text}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    style={{
-                      width: "100%",
-                      marginTop: "32px",
-                      padding: "12px",
-                      border: "1px solid rgba(172,179,178,0.3)",
-                      borderRadius: "9999px",
-                      background: "none",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "background 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#eaefee")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
-                  >
-                    Explore Knowledge Hub
-                  </button>
-                </div>
-
-                {/* Safety Score */}
-                <div
-                  style={{
-                    backgroundColor: "rgba(42,108,44,0.05)",
-                    borderRadius: "12px",
-                    padding: "32px",
-                    border: "1px solid rgba(42,108,44,0.1)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        color: "#596060",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.15em",
-                      }}
-                    >
-                      Safety Score
-                    </span>
-                    <span
-                      style={{
-                        backgroundColor: "#acf4a4",
-                        color: "#004b0f",
-                        fontSize: "10px",
-                        fontWeight: 700,
-                        padding: "4px 8px",
-                        borderRadius: "9999px",
-                      }}
-                    >
-                      GOLD TIER
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <div
-                      style={{ position: "relative", width: "80px", height: "80px", flexShrink: 0 }}
-                    >
-                      <svg
-                        viewBox="0 0 36 36"
-                        style={{ width: "100%", height: "100%" }}
-                      >
-                        <path
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                          fill="none"
-                          stroke="rgba(42,108,44,0.1)"
-                          strokeWidth="3"
-                        />
-                        <path
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                          fill="none"
-                          stroke="#2a6c2c"
-                          strokeWidth="3"
-                          strokeDasharray="92, 100"
-                        />
-                      </svg>
-                      <div
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontFamily: "Manrope, sans-serif",
-                          fontWeight: 700,
-                          fontSize: "20px",
-                        }}
-                      >
-                        92
-                      </div>
-                    </div>
-                    <div>
-                      <p style={{ fontWeight: 700, fontSize: "14px", margin: 0 }}>
-                        Excellent Safety Record
-                      </p>
-                      <p
-                        style={{
-                          fontSize: "12px",
-                          color: "#596060",
-                          marginTop: "4px",
-                        }}
-                      >
-                        Keep it up to unlock lower insurance premiums.
-                      </p>
-                    </div>
-                  </div>
+              <div className="db-score-info">
+                <p className="db-score-label">Excellent Safety Record</p>
+                <p className="db-score-sub">Keep it up to unlock lower insurance premiums.</p>
+                <div className="db-score-badges">
+                  <span className="db-score-badge">🛡 No incidents</span>
+                  <span className="db-score-badge">⚡ Always online</span>
                 </div>
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </>
+
+          {/* ── City Heatmap ── */}
+          <div className="db-card db-card--map">
+            <div className="db-card-header">
+              <div>
+                <h3 className="db-card-title">City Heat Map</h3>
+                <span className="db-card-eyebrow" style={{ display: "block", marginTop: 2 }}>Real-time Safety & Activity</span>
+              </div>
+              <div className="db-map-modes">
+                {["SAFETY", "DEMAND"].map(mode => (
+                  <button
+                    key={mode}
+                    className={`db-mode-btn ${mapMode === mode ? "db-mode-btn--active" : ""}`}
+                    onClick={() => setMapMode(mode)}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="db-map-container">
+              <MapPlaceholder />
+              <div className="db-map-legend">
+                <span className="db-legend-title">Legend</span>
+                {[
+                  { color: "#2a6c2c", label: "Secure" },
+                  { color: "#acf4a4", label: "Moderate" },
+                  { color: "rgba(168,56,54,0.65)", label: "Caution" },
+                ].map(({ color, label }) => (
+                  <div key={label} className="db-legend-item">
+                    <span className="db-legend-dot" style={{ background: color }} />
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="db-map-footer">
+              <span className="db-map-update">
+                <Icon name="update" style={{ fontSize: 14, color: "#2a6c2c" }} />
+                Auto-updates every 5 mins
+              </span>
+              <a href="#" className="db-link">Open Interactive Map →</a>
+            </div>
+          </div>
+
+          {/* ── Emergency SOS ── */}
+          <div className="db-card db-card--sos">
+            <div className="db-sos-card-bg" />
+            <div className="db-sos-card-content">
+              <div className="db-sos-card-icon">
+                <Icon name="emergency_share" fill={1} style={{ fontSize: 28, color: "#fff7f6" }} />
+              </div>
+              <h3 className="db-sos-card-title">Emergency Response</h3>
+              <p className="db-sos-card-body">
+                One-tap alert to GigShield 24/7 Dispatch, your union rep, and local police.
+              </p>
+              <button className="db-sos-card-btn">
+                Initiate SOS Protocol
+              </button>
+              <div className="db-sos-contacts">
+                <div className="db-sos-contact">
+                  <Icon name="support_agent" style={{ fontSize: 14 }} />
+                  GigShield Dispatch
+                </div>
+                <div className="db-sos-contact">
+                  <Icon name="groups" style={{ fontSize: 14 }} />
+                  Union Rep
+                </div>
+                <div className="db-sos-contact">
+                  <Icon name="local_police" style={{ fontSize: 14 }} />
+                  Local Police
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Expert Advice ── */}
+          <div className="db-card db-card--advice">
+            <div className="db-card-header">
+              <h3 className="db-card-title">Expert Advice</h3>
+              <a href="#" className="db-link">See all →</a>
+            </div>
+            <div className="db-advice-list">
+              {[
+                {
+                  badge: "LEGAL",
+                  badgeClass: "db-badge--blue",
+                  icon: "gavel",
+                  title: "Understanding your rights during night shifts",
+                  meta: "3 min read",
+                },
+                {
+                  badge: "WELLNESS",
+                  badgeClass: "db-badge--green",
+                  icon: "self_improvement",
+                  title: "5-minute posture reset for long delivery routes",
+                  meta: "2 min read",
+                },
+                {
+                  badge: "FINANCE",
+                  badgeClass: "db-badge--amber",
+                  icon: "account_balance_wallet",
+                  title: "How to dispute underpayment with evidence",
+                  meta: "4 min read",
+                },
+              ].map(({ badge, badgeClass, icon, title, meta }) => (
+                <div key={badge} className="db-advice-item">
+                  <div className="db-advice-icon-wrap">
+                    <Icon name={icon} fill={1} style={{ fontSize: 20, color: "#2a6c2c" }} />
+                  </div>
+                  <div className="db-advice-body">
+                    <span className={`db-badge ${badgeClass}`}>{badge}</span>
+                    <p className="db-advice-title">{title}</p>
+                    <span className="db-advice-meta">{meta}</span>
+                  </div>
+                  <Icon name="chevron_right" className="db-advice-arrow" />
+                </div>
+              ))}
+            </div>
+            <button className="db-explore-btn">Explore Knowledge Hub</button>
+          </div>
+
+        </div>
+      </main>
+    </div>
   );
 }

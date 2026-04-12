@@ -118,7 +118,7 @@
   border-color: var(--gs-accent);
 }
 
-/* Join Now — filled */
+/* Register — filled */
 .gs-nav-cta {
   background: var(--gs-accent);
   color: var(--gs-primary-dim);
@@ -288,6 +288,10 @@
 }
 .gs-btn-primary:active { transform: scale(0.97); }
 
+.gs-btn-primary-link {
+  text-decoration: none;
+}
+
 .gs-btn-primary--light {
   background: var(--gs-bg-card);
   color: var(--gs-primary);
@@ -304,7 +308,7 @@
 }
 .gs-btn-primary:hover .gs-btn-arrow { transform: translateX(4px); }
 
-/* Ghost button */
+/* Ghost anchor link (old style, kept for backward compat) */
 .gs-btn-ghost {
   color: rgba(234,255,226,0.8);
   font-size: 15px;
@@ -317,6 +321,25 @@
 .gs-btn-ghost:hover {
   color: var(--gs-accent);
   border-color: var(--gs-accent);
+}
+
+/* Ghost button — used for Login in hero actions */
+.gs-btn-ghost-btn {
+  background: none;
+  border: 1.5px solid rgba(172, 244, 164, 0.45);
+  color: rgba(234, 255, 226, 0.85);
+  padding: 13px 26px;
+  border-radius: var(--gs-radius-full);
+  font-family: var(--gs-font-head);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background var(--gs-transition), border-color var(--gs-transition), color var(--gs-transition);
+}
+.gs-btn-ghost-btn:hover {
+  background: rgba(172, 244, 164, 0.1);
+  border-color: var(--gs-accent);
+  color: var(--gs-accent);
 }
 
 /* Outline button */
@@ -777,4 +800,4 @@
   .gs-cta { padding: 80px 24px; }
   .gs-footer { padding: 40px 24px 28px; }
   .gs-footer-top { flex-direction: column; align-items: flex-start; }
-}
+} 

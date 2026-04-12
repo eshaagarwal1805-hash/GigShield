@@ -80,8 +80,7 @@ export default function Home() {
           <a href="#">Features</a>
           <a href="#">Community</a>
           <a href="#">Contact</a>
-          <button className="gs-nav-login" onClick={() => navigate("/login")}>Login</button>
-          <button className="gs-nav-cta" onClick={() => navigate("/login")}>Join Now</button>
+          <button className="gs-nav-cta" onClick={() => navigate("/login")}>Login / Register</button>
         </div>
       </nav>
 
@@ -109,11 +108,11 @@ export default function Home() {
             hardworking gig economy.
           </p>
           <div className="gs-hero-actions">
-            <button className="gs-btn-primary" onClick={() => navigate("/login")}>
-              <span>Join the Platform</span>
+            <a href="#features" className="gs-btn-primary gs-btn-primary-link">
+              <span>Explore Features</span>
               <span className="gs-btn-arrow">→</span>
-            </button>
-            <a href="#how" className="gs-btn-ghost">See How It Works</a>
+            </a>
+            <button className="gs-btn-ghost-btn" onClick={() => document.getElementById('how').scrollIntoView({ behavior: 'smooth' })}>Learn How It Works</button>
           </div>
           <div className="gs-hero-trust">
             <span>✓ Offline-ready</span>
@@ -180,7 +179,7 @@ export default function Home() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section className={`gs-section gs-features ${featuresIn ? "gs-visible" : ""}`} ref={featuresRef}>
+      <section id="features" className={`gs-section gs-features ${featuresIn ? "gs-visible" : ""}`} ref={featuresRef}>
         <div className="gs-section-inner">
           <div className="gs-section-tag">Platform Features</div>
           <h2 className="gs-section-title">
@@ -234,13 +233,13 @@ export default function Home() {
           </h2>
           <p>
             GigShield is free, private, and built for India's real working conditions.
-            Whether you drive, deliver, or freelance — we've got your back.
+            Create your account today and take control of your safety, earnings, and rights.
           </p>
           <div className="gs-cta-actions">
-            <button className="gs-btn-primary gs-btn-primary--light" onClick={() => navigate("/login")}>
-              <span>Get Started Free</span>
+            <a href="mailto:support@gigshield.in" className="gs-btn-primary gs-btn-primary--light gs-btn-primary-link">
+              <span>Contact Us</span>
               <span className="gs-btn-arrow">→</span>
-            </button>
+            </a>
             <button className="gs-btn-outline">For Unions &amp; NGOs →</button>
           </div>
         </div>

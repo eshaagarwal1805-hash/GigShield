@@ -1,314 +1,177 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "../styles/Auth.css";
 
 export default function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e.preventDefault?.();
     setError("");
-
     if (!form.email || !form.password) {
       setError("Please fill in all fields.");
       return;
     }
-
     setLoading(true);
-    // Simulated auth — replace with real API call later
     setTimeout(() => {
       setLoading(false);
-      // Any email/password works for now
       navigate("/dashboard");
     }, 1200);
   };
 
   return (
-    <>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet"
-      />
-      <style>{`
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        .login-spinner {
-          width: 18px; height: 18px;
-          border: 2px solid rgba(255,255,255,0.4);
-          border-top-color: #fff;
-          border-radius: 50%;
-          animation: spin 0.7s linear infinite;
-          display: inline-block;
-        }
-      `}</style>
+    <div className="auth-root">
+      {/* Left panel */}
+      <div className="auth-panel auth-panel--left">
+        <div className="auth-panel-bg">
+          <div className="auth-grid" />
+          <div className="auth-orb auth-orb-1" />
+          <div className="auth-orb auth-orb-2" />
+        </div>
+        <div className="auth-panel-content">
+          <div className="auth-logo" onClick={() => navigate("/")}>
+            <span className="auth-logo-icon">🛡</span>
+            <span className="auth-logo-text">GigShield</span>
+          </div>
+          <div className="auth-panel-body">
+            <div className="auth-panel-tag">Trusted by workers across India</div>
+            <h2 className="auth-panel-title">
+              Your safety<br />never clocks out.
+            </h2>
+            <p className="auth-panel-sub">
+              From shift logging to SOS alerts — GigShield protects you every step of the way.
+            </p>
+            <div className="auth-panel-stats">
+              <div className="auth-panel-stat">
+                <span className="auth-panel-stat-val">50M+</span>
+                <span className="auth-panel-stat-lbl">Workers Protected</span>
+              </div>
+              <div className="auth-panel-stat-divider" />
+              <div className="auth-panel-stat">
+                <span className="auth-panel-stat-val">24/7</span>
+                <span className="auth-panel-stat-lbl">Live Monitoring</span>
+              </div>
+              <div className="auth-panel-stat-divider" />
+              <div className="auth-panel-stat">
+                <span className="auth-panel-stat-val">100%</span>
+                <span className="auth-panel-stat-lbl">Anonymous</span>
+              </div>
+            </div>
+          </div>
+          <div className="auth-panel-trust">
+            <span>✓ Offline-ready</span>
+            <span>✓ Privacy-first</span>
+            <span>✓ Union integrated</span>
+          </div>
+        </div>
+      </div>
 
-      <div
-        style={{
-          minHeight: "100vh",
-          backgroundColor: "#f0f4f3",
-          fontFamily: "Inter, sans-serif",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px",
-        }}
-      >
-        {/* Card */}
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "440px",
-            backgroundColor: "#ffffff",
-            borderRadius: "20px",
-            padding: "48px 40px",
-            boxShadow: "0 20px 60px rgba(45,52,51,0.08)",
-            animation: "fadeUp 0.5s ease both",
-          }}
-        >
-          {/* Logo */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              marginBottom: "32px",
-              cursor: "pointer",
-            }}
-            onClick={() => navigate("/")}
-          >
-            <span style={{ fontSize: "28px" }}>🛡</span>
-            <span
-              style={{
-                fontSize: "22px",
-                fontFamily: "Manrope, sans-serif",
-                fontWeight: 800,
-                color: "#0D7C66",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              GigShield
-            </span>
+      {/* Right panel — form */}
+      <div className="auth-panel auth-panel--right">
+        <div className="auth-form-wrap">
+          {/* Mobile logo */}
+          <div className="auth-logo auth-logo--mobile" onClick={() => navigate("/")}>
+            <span className="auth-logo-icon">🛡</span>
+            <span className="auth-logo-text">GigShield</span>
           </div>
 
-          <h1
-            style={{
-              fontFamily: "Manrope, sans-serif",
-              fontWeight: 800,
-              fontSize: "26px",
-              color: "#2d3433",
-              margin: "0 0 6px",
-            }}
-          >
-            Welcome back
-          </h1>
-          <p style={{ color: "#596060", fontSize: "14px", marginBottom: "32px" }}>
-            Sign in to access your GigShield dashboard.
-          </p>
+          <div className="auth-form-header">
+            <h1 className="auth-form-title">Welcome back</h1>
+            <p className="auth-form-sub">Sign in to access your GigShield dashboard.</p>
+          </div>
 
-          {/* Error */}
           {error && (
-            <div
-              style={{
-                backgroundColor: "rgba(168,56,54,0.08)",
-                border: "1px solid rgba(168,56,54,0.3)",
-                color: "#a83836",
-                padding: "12px 16px",
-                borderRadius: "10px",
-                fontSize: "13px",
-                marginBottom: "20px",
-              }}
-            >
+            <div className="auth-error">
+              <span className="auth-error-icon">⚠</span>
               {error}
             </div>
           )}
 
-          {/* Form — no <form> tag, using div + onClick */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-            {/* Email */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label
-                style={{ fontSize: "13px", fontWeight: 600, color: "#2d3433" }}
-              >
-                Email address
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="arjun@example.com"
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: "10px",
-                  border: "1.5px solid #dde4e3",
-                  outline: "none",
-                  fontSize: "14px",
-                  color: "#2d3433",
-                  backgroundColor: "#f8faf9",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "#2a6c2c")}
-                onBlur={(e) => (e.target.style.borderColor = "#dde4e3")}
-              />
-            </div>
-
-            {/* Password */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <label
-                  style={{ fontSize: "13px", fontWeight: 600, color: "#2d3433" }}
-                >
-                  Password
-                </label>
-                <a
-                  href="#"
-                  style={{
-                    fontSize: "12px",
-                    color: "#2a6c2c",
-                    textDecoration: "none",
-                    fontWeight: 600,
-                  }}
-                >
-                  Forgot password?
-                </a>
+          <div className="auth-fields">
+            <div className="auth-field">
+              <label className="auth-label">Email address</label>
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon">✉</span>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="arjun@example.com"
+                  className="auth-input"
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
+                />
               </div>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: "10px",
-                  border: "1.5px solid #dde4e3",
-                  outline: "none",
-                  fontSize: "14px",
-                  color: "#2d3433",
-                  backgroundColor: "#f8faf9",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "#2a6c2c")}
-                onBlur={(e) => (e.target.style.borderColor = "#dde4e3")}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
-              />
             </div>
 
-            {/* Submit */}
+            <div className="auth-field">
+              <div className="auth-label-row">
+                <label className="auth-label">Password</label>
+                <a href="#" className="auth-forgot">Forgot password?</a>
+              </div>
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon">🔒</span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  className="auth-input"
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
+                />
+                <button
+                  type="button"
+                  className="auth-eye"
+                  onClick={() => setShowPassword((v) => !v)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? "🙈" : "👁"}
+                </button>
+              </div>
+            </div>
+
             <button
+              className={`auth-btn-primary ${loading ? "auth-btn-primary--loading" : ""}`}
               onClick={handleSubmit}
               disabled={loading}
-              style={{
-                marginTop: "8px",
-                width: "100%",
-                padding: "14px",
-                borderRadius: "10px",
-                background: "linear-gradient(135deg, #2a6c2c 0%, #1d5f21 100%)",
-                color: "#eaffe2",
-                fontFamily: "Manrope, sans-serif",
-                fontWeight: 700,
-                fontSize: "15px",
-                border: "none",
-                cursor: loading ? "not-allowed" : "pointer",
-                opacity: loading ? 0.8 : 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "10px",
-                transition: "opacity 0.2s, transform 0.1s",
-              }}
-              onMouseDown={(e) =>
-                !loading && (e.currentTarget.style.transform = "scale(0.98)")
-              }
-              onMouseUp={(e) =>
-                (e.currentTarget.style.transform = "scale(1)")
-              }
             >
               {loading ? (
                 <>
-                  <span className="login-spinner" />
+                  <span className="auth-spinner" />
                   Signing in…
                 </>
               ) : (
-                "Sign In to GigShield"
+                <>Sign In to GigShield <span className="auth-btn-arrow">→</span></>
               )}
             </button>
           </div>
 
-          {/* Divider */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              margin: "28px 0",
-            }}
-          >
-            <div style={{ flex: 1, height: "1px", backgroundColor: "#dde4e3" }} />
-            <span style={{ fontSize: "12px", color: "#9b9d9d" }}>
-              New to GigShield?
-            </span>
-            <div style={{ flex: 1, height: "1px", backgroundColor: "#dde4e3" }} />
+          <div className="auth-divider">
+            <span className="auth-divider-line" />
+            <span className="auth-divider-text">New to GigShield?</span>
+            <span className="auth-divider-line" />
           </div>
 
-          {/* Register */}
           <button
-            onClick={() => navigate("/")}
-            style={{
-              width: "100%",
-              padding: "13px",
-              borderRadius: "10px",
-              border: "1.5px solid #acb3b2",
-              background: "none",
-              color: "#2d3433",
-              fontFamily: "Manrope, sans-serif",
-              fontWeight: 600,
-              fontSize: "14px",
-              cursor: "pointer",
-              transition: "border-color 0.2s, background 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "#2a6c2c";
-              e.currentTarget.style.backgroundColor = "#f0f4f3";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "#acb3b2";
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
+            className="auth-btn-secondary"
+            onClick={() => navigate("/register")}
           >
             Create a free account →
           </button>
-        </div>
 
-        {/* Footer note */}
-        <p
-          style={{
-            marginTop: "24px",
-            fontSize: "12px",
-            color: "#9b9d9d",
-            textAlign: "center",
-          }}
-        >
-          © 2026 GigShield · Privacy-First · Offline-Ready
-        </p>
+          <p className="auth-footer-note">
+            © 2026 GigShield · Privacy-First · Offline-Ready
+          </p>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
