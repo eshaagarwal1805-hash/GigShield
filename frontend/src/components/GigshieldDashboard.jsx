@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "../styles/Dashboard.css";
+import gigshieldLogo from "../assets/Gigshield Logo.png"; // adjust path if needed
 
 const NAV_LINKS = [
   { icon: "dashboard", label: "Home", id: "home" },
@@ -77,8 +78,11 @@ export default function GigShieldDashboard() {
       <header className="db-topnav">
         <div className="db-topnav-left">
           <div className="db-brand">
-            <span className="db-brand-icon">🛡</span>
-            <span className="db-brand-name">GigShield</span>
+            <img
+              src={gigshieldLogo}
+              alt="GigShield"
+              className="db-brand-logo"
+            />
           </div>
           <div className="db-search-wrap">
             <Icon name="search" className="db-search-icon" />
@@ -394,7 +398,6 @@ export default function GigShieldDashboard() {
             </div>
             <button className="db-explore-btn">Explore Knowledge Hub</button>
           </div>
-
         </div>
       </main>
     </div>

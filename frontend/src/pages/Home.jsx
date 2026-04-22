@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Home.css";
+import gigshieldLogo from "../assets/Gigshield Logo.png";
 
 const features = [
-  { icon: "📍", title: "Shift Logging & Geolocation", desc: "Seamlessly log work sessions with GPS check-ins. Every shift is recorded so no hour goes unaccounted." },
-  { icon: "🆘", title: "Emergency SOS Alerts", desc: "One tap sends instant alerts to unions, NGOs, or trusted contacts via push notification and SMS." },
-  { icon: "🤖", title: "AI Risk Detection", desc: "Detects irregular earnings, anomaly patterns, and workplace risks before they escalate." },
-  { icon: "💬", title: "Anonymous Peer Forums", desc: "Share experiences of harassment, accidents, or safety concerns without fear — moderated and secure." },
-  { icon: "💰", title: "Payout Verification", desc: "Employer-uploaded records matched against your logs. Dispute underpayments with evidence." },
-  { icon: "🗺️", title: "Safety Heatmaps", desc: "Community-sourced reports visualized across cities, helping you identify and avoid high-risk zones." },
-  { icon: "🌱", title: "Carbon Footprint Tracker", desc: "Monitor travel patterns and wellness insights — work smarter, live sustainably." },
-  { icon: "📶", title: "Offline Functionality", desc: "Core safety features work even in low-connectivity zones — because protection can't wait for Wi-Fi." },
+  { title: "Shift Logging & Geolocation", desc: "Seamlessly log work sessions with GPS check-ins. Every shift is recorded so no hour goes unaccounted." },
+  { title: "Emergency SOS Alerts", desc: "One tap sends instant alerts to unions, NGOs, or trusted contacts via push notification and SMS." },
+  { title: "AI Risk Detection", desc: "Detects irregular earnings, anomaly patterns, and workplace risks before they escalate." },
+  { title: "Anonymous Peer Forums", desc: "Share experiences of harassment, accidents, or safety concerns without fear — moderated and secure." },
+  { title: "Payout Verification", desc: "Employer-uploaded records matched against your logs. Dispute underpayments with evidence." },
+  { title: "Safety Heatmaps", desc: "Community-sourced reports visualized across cities, helping you identify and avoid high-risk zones." },
+  { title: "Carbon Footprint Tracker", desc: "Monitor travel patterns and wellness insights — work smarter, live sustainably." },
+  { title: "Offline Functionality", desc: "Core safety features work even in low-connectivity zones — because protection can't wait for Wi-Fi." },
+  { title: "Union & NGO Integration", desc: "Direct pipelines to verified labour unions and NGOs so disputes get resolved, not just reported." },
 ];
 
 const stats = [
@@ -20,15 +22,6 @@ const stats = [
   { value: "100%", label: "Anonymous Community Support" },
 ];
 
-const problems = [
-  { icon: "⚠️", text: "Payment disputes with no recourse" },
-  { icon: "🚧", text: "Unsafe working conditions & accidents" },
-  { icon: "😶", text: "Workplace harassment left unreported" },
-  { icon: "🏥", text: "No social security or compensation" },
-  { icon: "📵", text: "Zero real-time safety assistance" },
-  { icon: "🔇", text: "Silenced workers with no community" },
-];
-
 const steps = [
   { step: "01", title: "Log your shift", desc: "Check in with geolocation when you start work. Offline? No problem — it syncs automatically." },
   { step: "02", title: "Stay protected", desc: "AI monitors earnings anomalies and environmental risks in real time, alerting you proactively." },
@@ -36,7 +29,13 @@ const steps = [
   { step: "04", title: "Get resolution", desc: "Unions and NGOs receive dispute reports with verified evidence — faster outcomes, fairer pay." },
 ];
 
-function useInView(threshold = 0.12) {
+const communityPosts = [
+  { initials: "RK", name: "Ravi Kumar", role: "Delivery Partner · Mumbai", time: "2h ago", body: "Used the SOS feature for the first time last night — response from my union rep was under 3 minutes. Genuinely lifesaving.", likes: 84 },
+  { initials: "SP", name: "Sunita Patel", role: "Domestic Worker · Delhi", time: "5h ago", body: "Finally disputed my unpaid wages using the payout verification tool. Got ₹3,400 back. Never thought I had any power until now.", likes: 127 },
+  { initials: "MR", name: "Mohammed Rashid", role: "Driver · Pune", time: "1d ago", body: "The offline mode saved me during a remote delivery — no signal but the shift kept logging. Really thought through for us.", likes: 61 },
+];
+
+function useInView(threshold = 0.1) {
   const ref = useRef(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
@@ -46,7 +45,7 @@ function useInView(threshold = 0.12) {
     );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
-  }, []);
+  }, [threshold]);
   return [ref, inView];
 }
 
@@ -54,11 +53,13 @@ export default function Home() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [heroRef, heroIn] = useInView(0.05);
-  const [problemRef, problemIn] = useInView(0.08);
-  const [statsRef, statsIn] = useInView(0.1);
   const [featuresRef, featuresIn] = useInView(0.05);
-  const [howRef, howIn] = useInView(0.08);
-  const [ctaRef, ctaIn] = useInView(0.1);
+  const [howRef, howIn] = useInView(0.05);
+  const [communityRef, communityIn] = useInView(0.05);
+  const [contactRef, contactIn] = useInView(0.05);
+  const [ctaRef, ctaIn] = useInView(0.05);
+  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -66,25 +67,35 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const handleContact = () => {
+    if (contactForm.name && contactForm.email && contactForm.message) {
+      setSent(true);
+    }
+  };
+
   return (
     <div className="gs-root">
-
       {/* ── NAVBAR ── */}
-      <nav className={`gs-nav ${scrolled ? "gs-nav--scrolled" : ""}`}>
-        <div className="gs-nav-logo">
-          <div className="gs-nav-logo-icon">🛡</div>
-          <span className="gs-logo-text">GigShield</span>
+     <nav className={`gs-nav ${scrolled ? "gs-nav--scrolled" : ""}`}>
+      <div className="gs-nav-logo">
+        <img
+        src={gigshieldLogo}
+        alt="GigShield"
+        className="gs-nav-logo-img"
+        />
         </div>
         <div className="gs-nav-links">
-          <a href="#">Home</a>
-          <a href="#">Features</a>
-          <a href="#">Community</a>
-          <a href="#">Contact</a>
-          <button className="gs-nav-cta" onClick={() => navigate("/login")}>Login / Register</button>
-        </div>
-      </nav>
+          <a href="#features">Features</a>
+          <a href="#how">How It Works</a>
+          <a href="#community">Community</a>
+          <a href="#contact">Contact</a>
+          <button className="gs-nav-cta" onClick={() => navigate("/login")}>
+            Login / Register
+            </button>
+            </div>
+            </nav>
 
-      {/* ── HERO ── */}
+      {/* ── HERO (clean, centered) ── */}
       <section className={`gs-hero ${heroIn ? "gs-visible" : ""}`} ref={heroRef}>
         <div className="gs-hero-bg">
           <div className="gs-hero-grid" />
@@ -93,11 +104,7 @@ export default function Home() {
           <div className="gs-orb gs-orb-3" />
         </div>
 
-        <div className="gs-hero-content">
-          <div className="gs-hero-badge">
-            <span className="gs-badge-dot" />
-            🇮🇳 Built for India's 50 Million Gig Workers
-          </div>
+        <div className="gs-hero-center">
           <h1 className="gs-hero-title">
             Safety. Transparency.<br />
             <span className="gs-accent">Community.</span>
@@ -112,84 +119,41 @@ export default function Home() {
               <span>Explore Features</span>
               <span className="gs-btn-arrow">→</span>
             </a>
-            <button className="gs-btn-ghost-btn" onClick={() => document.getElementById('how').scrollIntoView({ behavior: 'smooth' })}>Learn How It Works</button>
-          </div>
-          <div className="gs-hero-trust">
-            <span>✓ Offline-ready</span>
-            <span>✓ Anonymous &amp; Private</span>
-            <span>✓ Union &amp; NGO Integrated</span>
-          </div>
-        </div>
-
-        {/* Floating preview cards */}
-        <div className="gs-hero-float-cards">
-          <div className="gs-float-card gs-float-card--1">
-            <div className="gs-float-card-icon">🛡</div>
-            <div>
-              <div className="gs-float-card-val">92</div>
-              <div className="gs-float-card-lbl">Safety Score</div>
-            </div>
-          </div>
-          <div className="gs-float-card gs-float-card--2">
-            <div className="gs-float-card-icon">💰</div>
-            <div>
-              <div className="gs-float-card-val">₹850</div>
-              <div className="gs-float-card-lbl">Today's Earnings</div>
-            </div>
-          </div>
-          <div className="gs-float-card gs-float-card--3">
-            <span className="gs-float-sos">SOS</span>
-            <div className="gs-float-card-lbl">24/7 Response</div>
+            <button
+              className="gs-btn-ghost-btn"
+              onClick={() =>
+                document.getElementById("how").scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              Learn How It Works
+            </button>
           </div>
         </div>
-      </section>
-
-      {/* ── PROBLEM ── */}
-      <section className={`gs-section gs-problem ${problemIn ? "gs-visible" : ""}`} ref={problemRef}>
-        <div className="gs-section-inner">
-          <div className="gs-section-tag">The Challenge</div>
-          <h2 className="gs-section-title">
-            India's gig workers are growing fast —<br />
-            <span className="gs-accent">their protections are not.</span>
-          </h2>
-          <p className="gs-section-sub">
-            With nearly 50 million workers projected by 2026, the gig economy boom hides a crisis
-            of exploitation, silence, and vulnerability. Existing platforms like eShram only
-            register workers — they don't protect them.
-          </p>
-          <div className="gs-problem-grid">
-            {problems.map((p, i) => (
-              <div className="gs-problem-item" key={i} style={{ animationDelay: `${i * 0.08}s` }}>
-                <span className="gs-problem-icon">{p.icon}</span>
-                <span>{p.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── STATS ── */}
-      <section className={`gs-stats-band ${statsIn ? "gs-visible" : ""}`} ref={statsRef}>
-        {stats.map((s, i) => (
-          <div className="gs-stat" key={i} style={{ animationDelay: `${i * 0.1}s` }}>
-            <div className="gs-stat-value">{s.value}</div>
-            <div className="gs-stat-label">{s.label}</div>
-          </div>
-        ))}
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" className={`gs-section gs-features ${featuresIn ? "gs-visible" : ""}`} ref={featuresRef}>
+      <section
+        id="features"
+        className={`gs-section gs-features ${featuresIn ? "gs-visible" : ""}`}
+        ref={featuresRef}
+      >
         <div className="gs-section-inner">
-          <div className="gs-section-tag">Platform Features</div>
+          <div className="gs-section-label">Platform Features</div>
           <h2 className="gs-section-title">
             Everything a gig worker needs —<br />
             <span className="gs-accent">in one shield.</span>
           </h2>
+          <p className="gs-section-sub">
+            Built ground-up for India's real working conditions — from bustling metros to low-connectivity zones.
+          </p>
           <div className="gs-features-grid">
             {features.map((f, i) => (
-              <div className="gs-feature-card" key={i} style={{ animationDelay: `${i * 0.07}s` }}>
-                <div className="gs-feature-icon">{f.icon}</div>
+              <div
+                className="gs-feature-card"
+                key={i}
+                style={{ animationDelay: `${i * 0.06}s` }}
+              >
+                <div className="gs-feature-num">{String(i + 1).padStart(2, "0")}</div>
                 <h3 className="gs-feature-title">{f.title}</h3>
                 <p className="gs-feature-desc">{f.desc}</p>
               </div>
@@ -199,15 +163,29 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how" className={`gs-section gs-how ${howIn ? "gs-visible" : ""}`} ref={howRef}>
-        <div className="gs-section-inner">
-          <div className="gs-section-tag">How It Works</div>
-          <h2 className="gs-section-title">
-            Simple. Powerful. <span className="gs-accent">Always On.</span>
-          </h2>
-          <div className="gs-steps">
+      <section
+        id="how"
+        className={`gs-section gs-how ${howIn ? "gs-visible" : ""}`}
+        ref={howRef}
+      >
+        <div className="gs-section-inner gs-how-inner">
+          <div className="gs-how-left">
+            <div className="gs-section-label">How It Works</div>
+            <h2 className="gs-section-title">
+              Simple. Powerful.<br />
+              <span className="gs-accent">Always On.</span>
+            </h2>
+            <p className="gs-section-sub" style={{ marginBottom: 0 }}>
+              Four steps stand between a gig worker and a safer, fairer work life. GigShield makes each one effortless.
+            </p>
+          </div>
+          <div className="gs-how-right">
             {steps.map((s, i) => (
-              <div className="gs-step" key={i} style={{ animationDelay: `${i * 0.1}s` }}>
+              <div
+                className="gs-step"
+                key={i}
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
                 <div className="gs-step-num">{s.step}</div>
                 <div className="gs-step-body">
                   <h3>{s.title}</h3>
@@ -219,7 +197,50 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
+      {/* ── COMMUNITY ── */}
+      <section
+        id="community"
+        className={`gs-section gs-community ${communityIn ? "gs-visible" : ""}`}
+        ref={communityRef}
+      >
+        <div className="gs-section-inner">
+          <div className="gs-section-label">Community</div>
+          <h2 className="gs-section-title">
+            Workers speaking up.<br />
+            <span className="gs-accent">Anonymously. Safely.</span>
+          </h2>
+          <p className="gs-section-sub">
+            Thousands of gig workers share experiences, raise issues, and support each other every day on GigShield.
+          </p>
+          <div className="gs-community-grid">
+            {communityPosts.map((p, i) => (
+              <div
+                className="gs-community-card"
+                key={i}
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
+                <div className="gs-community-header">
+                  <div className="gs-community-avatar">{p.initials}</div>
+                  <div className="gs-community-author">
+                    <div className="gs-community-name">{p.name}</div>
+                    <div className="gs-community-role">{p.role}</div>
+                  </div>
+                  <span className="gs-community-time">{p.time}</span>
+                </div>
+                <p className="gs-community-body">"{p.body}"</p>
+                <div className="gs-community-footer">
+                  <span className="gs-community-likes">
+                    ♥ {p.likes} workers found this helpful
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* CTA under community intentionally removed (no extra register button) */}
+        </div>
+      </section>
+
+      {/* ── CTA BANNER ── */}
       <section className={`gs-cta ${ctaIn ? "gs-visible" : ""}`} ref={ctaRef}>
         <div className="gs-cta-bg">
           <div className="gs-cta-orb gs-cta-orb--1" />
@@ -233,14 +254,124 @@ export default function Home() {
           </h2>
           <p>
             GigShield is free, private, and built for India's real working conditions.
-            Create your account today and take control of your safety, earnings, and rights.
+            Whether you drive, deliver, or freelance — we've got your back.
           </p>
           <div className="gs-cta-actions">
-            <a href="mailto:support@gigshield.in" className="gs-btn-primary gs-btn-primary--light gs-btn-primary-link">
-              <span>Contact Us</span>
-              <span className="gs-btn-arrow">→</span>
-            </a>
-            <button className="gs-btn-outline">For Unions &amp; NGOs →</button>
+            {/* Only scroll-to-contact CTA, since Login/Register is already in navbar */}
+            <button
+              className="gs-btn-outline"
+              onClick={() =>
+                document.getElementById("contact").scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              For Unions &amp; NGOs →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CONTACT ── */}
+      <section
+        id="contact"
+        className={`gs-section gs-contact ${contactIn ? "gs-visible" : ""}`}
+        ref={contactRef}
+      >
+        <div className="gs-section-inner gs-contact-inner">
+          <div className="gs-contact-left">
+            <div className="gs-section-label">Contact</div>
+            <h2 className="gs-section-title" style={{ fontSize: "clamp(26px,3.5vw,40px)" }}>
+              We'd love to<br />
+              <span className="gs-accent">hear from you.</span>
+            </h2>
+            <p className="gs-section-sub" style={{ marginBottom: 36 }}>
+              Whether you're a worker, union, NGO, or researcher — GigShield is built to
+              collaborate. Reach out any time.
+            </p>
+            <div className="gs-contact-details">
+              <div className="gs-contact-detail">
+                <span className="gs-contact-detail-icon">✉</span>
+                <div>
+                  <div className="gs-contact-detail-label">Email</div>
+                  <a
+                    href="mailto:support@gigshield.in"
+                    className="gs-contact-detail-val"
+                  >
+                    support@gigshield.in
+                  </a>
+                </div>
+              </div>
+              <div className="gs-contact-detail">
+                <span className="gs-contact-detail-icon">🤝</span>
+                <div>
+                  <div className="gs-contact-detail-label">Partnerships</div>
+                  <a
+                    href="mailto:partners@gigshield.in"
+                    className="gs-contact-detail-val"
+                  >
+                    partners@gigshield.in
+                  </a>
+                </div>
+              </div>
+              <div className="gs-contact-detail">
+                <span className="gs-contact-detail-icon">📍</span>
+                <div>
+                  <div className="gs-contact-detail-label">Based in</div>
+                  <span className="gs-contact-detail-val">Bengaluru, India</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="gs-contact-right">
+            {sent ? (
+              <div className="gs-contact-success">
+                <div className="gs-contact-success-icon">✓</div>
+                <h3>Message received!</h3>
+                <p>We'll get back to you within 24 hours. Thank you for reaching out.</p>
+              </div>
+            ) : (
+              <div className="gs-contact-form">
+                <div className="gs-contact-field">
+                  <label className="gs-contact-label">Your name</label>
+                  <input
+                    type="text"
+                    className="gs-contact-input"
+                    placeholder="Arjun Sharma"
+                    value={contactForm.name}
+                    onChange={(e) =>
+                      setContactForm((p) => ({ ...p, name: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="gs-contact-field">
+                  <label className="gs-contact-label">Email address</label>
+                  <input
+                    type="email"
+                    className="gs-contact-input"
+                    placeholder="arjun@example.com"
+                    value={contactForm.email}
+                    onChange={(e) =>
+                      setContactForm((p) => ({ ...p, email: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="gs-contact-field">
+                  <label className="gs-contact-label">Message</label>
+                  <textarea
+                    className="gs-contact-input gs-contact-textarea"
+                    placeholder="Tell us about your work, your union, or how we can help…"
+                    rows={5}
+                    value={contactForm.message}
+                    onChange={(e) =>
+                      setContactForm((p) => ({ ...p, message: e.target.value }))
+                    }
+                  />
+                </div>
+                <button className="gs-contact-submit" onClick={handleContact}>
+                  Send Message <span>→</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -255,7 +386,7 @@ export default function Home() {
           <div className="gs-footer-links">
             <a href="#">Privacy Policy</a>
             <a href="#">Terms</a>
-            <a href="#">Contact</a>
+            <a href="#contact">Contact</a>
           </div>
         </div>
         <div className="gs-footer-divider" />

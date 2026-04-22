@@ -231,6 +231,12 @@ a { font-family: var(--db-font-body); }
   flex-shrink: 0;
 }
 
+.db-brand-logo {
+  height: 100px;   /* increase/decrease to taste (e.g. 40px) */
+  width: auto;
+  display: block;
+}
+
 /* Nav */
 .db-nav {
   display: flex;
