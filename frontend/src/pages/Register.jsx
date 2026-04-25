@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Auth.css";
-import api from "../utils/api"; // your axios instance with JWT interceptor
+import api from "../api/axios"; // your axios instance with JWT interceptor
 
 const WORKER_TYPES = [
   { value: "delivery", label: "🛵 Delivery" },

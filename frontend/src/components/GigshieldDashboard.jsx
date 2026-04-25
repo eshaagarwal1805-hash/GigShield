@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import "../styles/Dashboard.css";
 import gigshieldLogo from "../assets/Gigshield Logo.png";
 import { useNavigate } from "react-router-dom";
-import api from "../utils/api"; // ← the new axios file
+import api from "../api/axios"; // ← the new axios file
 
 // ─────────────────────────────────────────────────────────────
 //  Constants
