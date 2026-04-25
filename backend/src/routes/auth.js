@@ -1,0 +1,51 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const Dashboard = require('../models/Dashboard');
+
+const generateToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+const generateWorkerId = () =>
+  `GS-IND-${Math.floor(10000 + Math.random() * 90000)}`;
+
+// POST /api/auth/register
+router.post('/register', async (req, res) => {
+  const { name, email, phone, password, workerType } = req.body;
+  try {
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(400).json({ message: 'Email already registered' });
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await User.create({ name, email, phone, passwordHash, workerType });
+
+    await Dashboard.create({
+      userId: user._id,
+      uniqueWorkerId: generateWorkerId()
+    });
+
+    res.status(201).json({ token: generateToken(user._id), user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/auth/login
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+
+    const match = await bcrypt.compare(password, user.passwordHash);
+    if (!match) return res.status(400).json({ message: 'Invalid credentials' });
+
+    res.json({ token: generateToken(user._id), user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+module.exports = router;

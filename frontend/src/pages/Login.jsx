@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Auth.css";
+import api from "../utils/api"; // your axios instance with JWT interceptor
 
 export default function Login() {
   const navigate = useNavigate();
@@ -12,18 +13,35 @@ export default function Login() {
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = (e) => {
-    e.preventDefault?.();
+  const handleSubmit = async (e) => {
+    e?.preventDefault?.();
     setError("");
+
     if (!form.email || !form.password) {
       setError("Please fill in all fields.");
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { data } = await api.post("/auth/login", {
+        email: form.email,
+        password: form.password,
+      });
+
+      // Save the JWT — your axios interceptor will pick it up automatically
+      localStorage.setItem("token", data.token);
+
       navigate("/dashboard");
-    }, 1200);
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Login failed. Please check your credentials.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

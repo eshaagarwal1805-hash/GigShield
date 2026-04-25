@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Auth.css";
+import api from "../utils/api"; // your axios instance with JWT interceptor
 
 const WORKER_TYPES = [
   { value: "delivery", label: "🛵 Delivery" },
@@ -24,7 +25,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [step, setStep] = useState(1); // 2-step form
+  const [step, setStep] = useState(1);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -42,8 +43,9 @@ export default function Register() {
     setStep(2);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError("");
+
     if (!form.workerType) {
       setError("Please select your worker type.");
       return;
@@ -56,11 +58,41 @@ export default function Register() {
       setError("Passwords do not match.");
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      // Step 1 — Register the new account
+      await api.post("/auth/register", {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        workerType: form.workerType,
+        password: form.password,
+      });
+
+      // Step 2 — Auto-login immediately after registration
+      const { data } = await api.post("/auth/login", {
+        email: form.email,
+        password: form.password,
+      });
+
+      // Save JWT — axios interceptor will attach it to future requests
+      localStorage.setItem("token", data.token);
+
       navigate("/dashboard");
-    }, 1400);
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Registration failed. Please try again.";
+      setError(msg);
+      // If register succeeded but login failed, still send them to login
+      if (err.config?.url?.includes("/auth/login")) {
+        navigate("/login");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

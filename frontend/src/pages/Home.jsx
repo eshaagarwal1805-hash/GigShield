@@ -61,6 +61,10 @@ export default function Home() {
   const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
   const [sent, setSent] = useState(false);
 
+  // ── Smart login button: go to /dashboard if already authenticated ──
+  const isLoggedIn = !!localStorage.getItem("token");
+  const handleAuthNav = () => navigate(isLoggedIn ? "/dashboard" : "/login");
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     window.addEventListener("scroll", onScroll);
@@ -76,26 +80,26 @@ export default function Home() {
   return (
     <div className="gs-root">
       {/* ── NAVBAR ── */}
-     <nav className={`gs-nav ${scrolled ? "gs-nav--scrolled" : ""}`}>
-      <div className="gs-nav-logo">
-        <img
-        src={gigshieldLogo}
-        alt="GigShield"
-        className="gs-nav-logo-img"
-        />
+      <nav className={`gs-nav ${scrolled ? "gs-nav--scrolled" : ""}`}>
+        <div className="gs-nav-logo">
+          <img
+            src={gigshieldLogo}
+            alt="GigShield"
+            className="gs-nav-logo-img"
+          />
         </div>
         <div className="gs-nav-links">
           <a href="#features">Features</a>
           <a href="#how">How It Works</a>
           <a href="#community">Community</a>
           <a href="#contact">Contact</a>
-          <button className="gs-nav-cta" onClick={() => navigate("/login")}>
-            Login / Register
-            </button>
-            </div>
-            </nav>
+          <button className="gs-nav-cta" onClick={handleAuthNav}>
+            {isLoggedIn ? "Go to Dashboard" : "Login / Register"}
+          </button>
+        </div>
+      </nav>
 
-      {/* ── HERO (clean, centered) ── */}
+      {/* ── HERO ── */}
       <section className={`gs-hero ${heroIn ? "gs-visible" : ""}`} ref={heroRef}>
         <div className="gs-hero-bg">
           <div className="gs-hero-grid" />
@@ -236,7 +240,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-          {/* CTA under community intentionally removed (no extra register button) */}
         </div>
       </section>
 
@@ -257,7 +260,6 @@ export default function Home() {
             Whether you drive, deliver, or freelance — we've got your back.
           </p>
           <div className="gs-cta-actions">
-            {/* Only scroll-to-contact CTA, since Login/Register is already in navbar */}
             <button
               className="gs-btn-outline"
               onClick={() =>
@@ -292,10 +294,7 @@ export default function Home() {
                 <span className="gs-contact-detail-icon">✉</span>
                 <div>
                   <div className="gs-contact-detail-label">Email</div>
-                  <a
-                    href="mailto:support@gigshield.in"
-                    className="gs-contact-detail-val"
-                  >
+                  <a href="mailto:support@gigshield.in" className="gs-contact-detail-val">
                     support@gigshield.in
                   </a>
                 </div>
@@ -304,10 +303,7 @@ export default function Home() {
                 <span className="gs-contact-detail-icon">🤝</span>
                 <div>
                   <div className="gs-contact-detail-label">Partnerships</div>
-                  <a
-                    href="mailto:partners@gigshield.in"
-                    className="gs-contact-detail-val"
-                  >
+                  <a href="mailto:partners@gigshield.in" className="gs-contact-detail-val">
                     partners@gigshield.in
                   </a>
                 </div>
@@ -338,9 +334,7 @@ export default function Home() {
                     className="gs-contact-input"
                     placeholder="Arjun Sharma"
                     value={contactForm.name}
-                    onChange={(e) =>
-                      setContactForm((p) => ({ ...p, name: e.target.value }))
-                    }
+                    onChange={(e) => setContactForm((p) => ({ ...p, name: e.target.value }))}
                   />
                 </div>
                 <div className="gs-contact-field">
@@ -350,9 +344,7 @@ export default function Home() {
                     className="gs-contact-input"
                     placeholder="arjun@example.com"
                     value={contactForm.email}
-                    onChange={(e) =>
-                      setContactForm((p) => ({ ...p, email: e.target.value }))
-                    }
+                    onChange={(e) => setContactForm((p) => ({ ...p, email: e.target.value }))}
                   />
                 </div>
                 <div className="gs-contact-field">
@@ -362,9 +354,7 @@ export default function Home() {
                     placeholder="Tell us about your work, your union, or how we can help…"
                     rows={5}
                     value={contactForm.message}
-                    onChange={(e) =>
-                      setContactForm((p) => ({ ...p, message: e.target.value }))
-                    }
+                    onChange={(e) => setContactForm((p) => ({ ...p, message: e.target.value }))}
                   />
                 </div>
                 <button className="gs-contact-submit" onClick={handleContact}>

@@ -4,6 +4,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 
+const PrivateRoute = ({ children }) => {
+  return localStorage.getItem('token') ? children : <Navigate to="/login" />
+}
+
 export default function App() {
   return (
     <BrowserRouter>
