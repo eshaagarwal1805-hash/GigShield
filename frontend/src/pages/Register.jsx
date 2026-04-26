@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Auth.css";
 import api from "../api/axios"; // your axios instance with JWT interceptor
+import gigshieldLogo from "../assets/Gigshield Logo.png";
 
 const WORKER_TYPES = [
   { value: "delivery", label: "🛵 Delivery" },
@@ -98,46 +99,39 @@ export default function Register() {
   return (
     <div className="auth-root">
       {/* Left panel */}
-      <div className="auth-panel auth-panel--left">
-        <div className="auth-panel-bg">
-          <div className="auth-grid" />
-          <div className="auth-orb auth-orb-1" />
-          <div className="auth-orb auth-orb-2" />
-        </div>
-        <div className="auth-panel-content">
-          <div className="auth-logo" onClick={() => navigate("/")}>
-            <span className="auth-logo-icon">🛡</span>
-            <span className="auth-logo-text">GigShield</span>
+<div className="auth-panel auth-panel--left">
+  <div className="auth-panel-bg">
+    <div className="auth-grid" />
+    <div className="auth-orb auth-orb-1" />
+    <div className="auth-orb auth-orb-2" />
+  </div>
+  <div className="auth-panel-content">
+    <div className="auth-logo" onClick={() => navigate("/")}>
+      <img src={gigshieldLogo} alt="GigShield" className="auth-logo-img" />
+    </div>
+    <div className="auth-panel-body">
+      <h2 className="auth-panel-title">
+        Join India's<br />gig worker<br />community.
+      </h2>
+      <p className="auth-panel-sub">
+        Get real-time protection, fair pay tools, and a community that has your back — completely free.
+      </p>
+      <div className="auth-register-perks">
+        {[
+          { num: "01", text: "Automatic shift & earnings logging" },
+          { num: "02", text: "One-tap SOS to unions & NGOs" },
+          { num: "03", text: "Dispute underpayments with proof" },
+          { num: "04", text: "Anonymous peer support forums" },
+        ].map((p, i) => (
+          <div className="auth-perk" key={i}>
+            <span className="auth-perk-num">{p.num}</span>
+            <span className="auth-perk-text">{p.text}</span>
           </div>
-          <div className="auth-panel-body">
-            <div className="auth-panel-tag">Free. Private. Powerful.</div>
-            <h2 className="auth-panel-title">
-              Join India's<br />gig worker<br />community.
-            </h2>
-            <p className="auth-panel-sub">
-              Get real-time protection, fair pay tools, and a community that has your back — completely free.
-            </p>
-            <div className="auth-register-perks">
-              {[
-                { icon: "📍", text: "Automatic shift & earnings logging" },
-                { icon: "🆘", text: "One-tap SOS to unions & NGOs" },
-                { icon: "💰", text: "Dispute underpayments with proof" },
-                { icon: "💬", text: "Anonymous peer support forums" },
-              ].map((p, i) => (
-                <div className="auth-perk" key={i}>
-                  <span className="auth-perk-icon">{p.icon}</span>
-                  <span className="auth-perk-text">{p.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="auth-panel-trust">
-            <span>✓ Offline-ready</span>
-            <span>✓ Privacy-first</span>
-            <span>✓ Union integrated</span>
-          </div>
-        </div>
+        ))}
       </div>
+    </div>
+  </div>
+</div>
 
       {/* Right panel — form */}
       <div className="auth-panel auth-panel--right">

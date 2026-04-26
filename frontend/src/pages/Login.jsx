@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Auth.css";
 import api from "../api/axios"; // your axios instance with JWT interceptor
+import gigshieldLogo from "../assets/Gigshield Logo.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -47,50 +48,26 @@ export default function Login() {
   return (
     <div className="auth-root">
       {/* Left panel */}
-      <div className="auth-panel auth-panel--left">
-        <div className="auth-panel-bg">
-          <div className="auth-grid" />
-          <div className="auth-orb auth-orb-1" />
-          <div className="auth-orb auth-orb-2" />
-        </div>
-        <div className="auth-panel-content">
-          <div className="auth-logo" onClick={() => navigate("/")}>
-            <span className="auth-logo-icon">🛡</span>
-            <span className="auth-logo-text">GigShield</span>
-          </div>
-          <div className="auth-panel-body">
-            <div className="auth-panel-tag">Trusted by workers across India</div>
-            <h2 className="auth-panel-title">
-              Your safety<br />never clocks out.
-            </h2>
-            <p className="auth-panel-sub">
-              From shift logging to SOS alerts — GigShield protects you every step of the way.
-            </p>
-            <div className="auth-panel-stats">
-              <div className="auth-panel-stat">
-                <span className="auth-panel-stat-val">50M+</span>
-                <span className="auth-panel-stat-lbl">Workers Protected</span>
-              </div>
-              <div className="auth-panel-stat-divider" />
-              <div className="auth-panel-stat">
-                <span className="auth-panel-stat-val">24/7</span>
-                <span className="auth-panel-stat-lbl">Live Monitoring</span>
-              </div>
-              <div className="auth-panel-stat-divider" />
-              <div className="auth-panel-stat">
-                <span className="auth-panel-stat-val">100%</span>
-                <span className="auth-panel-stat-lbl">Anonymous</span>
-              </div>
-            </div>
-          </div>
-          <div className="auth-panel-trust">
-            <span>✓ Offline-ready</span>
-            <span>✓ Privacy-first</span>
-            <span>✓ Union integrated</span>
-          </div>
-        </div>
-      </div>
-
+<div className="auth-panel auth-panel--left">
+  <div className="auth-panel-bg">
+    <div className="auth-grid" />
+    <div className="auth-orb auth-orb-1" />
+    <div className="auth-orb auth-orb-2" />
+  </div>
+  <div className="auth-panel-content">
+    <div className="auth-logo" onClick={() => navigate("/")}>
+      <img src={gigshieldLogo} alt="GigShield" className="auth-logo-img" />
+    </div>
+    <div className="auth-panel-body">
+      <h2 className="auth-panel-title">
+        Your safety<br />never clocks out.
+      </h2>
+      <p className="auth-panel-sub">
+        From shift logging to SOS alerts — GigShield protects you every step of the way.
+      </p>
+    </div>
+  </div>
+</div>
       {/* Right panel — form */}
       <div className="auth-panel auth-panel--right">
         <div className="auth-form-wrap">
