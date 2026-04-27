@@ -1,28 +1,22 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import "../styles/Dashboard.css";
 import gigshieldLogo from "../assets/Gigshield Logo.png";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios"; // ← the new axios file
-import RiskReportForm from "./RiskReportForm"; // ── CHANGE 1 ──
-import HeatmapView    from "./HeatmapView";     // ← ADDed in CHANGE 1, shows safety heatmap with community reports
+import api from "../api/axios";
+import RiskReportForm from "./RiskReportForm";
+import HeatmapView from "./HeatmapView";
 
 // ─────────────────────────────────────────────────────────────
 //  Constants
 // ─────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { icon: "dashboard",  label: "Home",          id: "home" },
-  { icon: "payments",   label: "Earnings",       id: "earnings" },
-  { icon: "history",    label: "Shift History",  id: "history" },
-  { icon: "group",      label: "Community",      id: "community" },
-  { icon: "warning",    label: "Alerts",         id: "alerts" },
+  { icon: "dashboard",  label: "Home",         id: "home" },
+  { icon: "payments",   label: "Earnings",      id: "earnings" },
+  { icon: "history",    label: "Shift History", id: "history" },
+  { icon: "group",      label: "Community",     id: "community" },
+  { icon: "warning",    label: "Alerts",        id: "alerts" },
 ];
-
-const NOTIFICATION_TYPES = {
-  SHIFT_START: "Shift started",
-  SHIFT_END:   "Shift ended",
-  EARNING:     "Earning added",
-};
 
 // ─────────────────────────────────────────────────────────────
 //  Helpers
@@ -36,6 +30,13 @@ function fmtDate(iso) {
   });
 }
 
+function fmtTime(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleTimeString("en-IN", {
+    hour: "2-digit", minute: "2-digit",
+  });
+}
+
 function shiftDuration(start, end) {
   if (!start) return "00:00";
   const ms = (end ? new Date(end) : new Date()) - new Date(start);
@@ -44,8 +45,23 @@ function shiftDuration(start, end) {
   return `${h}:${m}`;
 }
 
+function msToHHMM(ms) {
+  if (!ms || ms <= 0) return "0h 0m";
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return `${h}h ${m}m`;
+}
+
+function isSameDay(date1, date2) {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+}
+
 // ─────────────────────────────────────────────────────────────
-//  Small reusable UI pieces (unchanged)
+//  Small reusable UI pieces
 // ─────────────────────────────────────────────────────────────
 
 const Icon = ({ name, fill = 0, className = "", style = {} }) => (
@@ -89,7 +105,172 @@ function MapPlaceholder({ small = false }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Page sections — now receive live data via props
+//  Account Settings Modal
+// ─────────────────────────────────────────────────────────────
+
+function AccountSettingsModal({ user, onClose, onSave }) {
+  const [form, setForm] = useState({
+    name:        user?.name        || "",
+    email:       user?.email       || "",
+    phone:       user?.phone       || "",
+    job:         user?.job         || "",
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState("");
+  const [success, setSuccess] = useState("");
+  const [tab, setTab] = useState("profile"); // 'profile' | 'security'
+
+  const handleChange = (field) => (e) =>
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleSave = async () => {
+    setError(""); setSuccess("");
+    if (tab === "security") {
+      if (form.newPassword !== form.confirmPassword) {
+        setError("New passwords do not match."); return;
+      }
+      if (form.newPassword && form.newPassword.length < 6) {
+        setError("Password must be at least 6 characters."); return;
+      }
+    }
+    setSaving(true);
+    try {
+      const payload = tab === "profile"
+        ? { name: form.name, email: form.email, phone: form.phone, job: form.job }
+        : { oldPassword: form.oldPassword, newPassword: form.newPassword };
+      const res = await api.put("/user/profile", payload);
+      setSuccess("Saved successfully!");
+      if (onSave) onSave(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="db-modal-overlay" onClick={onClose}>
+      <div className="db-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="db-modal-header">
+          <h3 className="db-modal-title">Account Settings</h3>
+          <button className="db-modal-close" onClick={onClose}>
+            <Icon name="close" />
+          </button>
+        </div>
+
+        <div className="db-modal-tabs">
+          <button
+            className={`db-modal-tab ${tab === "profile" ? "db-modal-tab--active" : ""}`}
+            onClick={() => setTab("profile")}
+          >
+            <Icon name="person" style={{ fontSize: 15 }} /> Profile
+          </button>
+          <button
+            className={`db-modal-tab ${tab === "security" ? "db-modal-tab--active" : ""}`}
+            onClick={() => setTab("security")}
+          >
+            <Icon name="lock" style={{ fontSize: 15 }} /> Security
+          </button>
+        </div>
+
+        <div className="db-modal-body">
+          {tab === "profile" && (
+            <div className="db-modal-fields">
+              <label className="db-field-label">
+                Full Name
+                <input
+                  className="db-field-input"
+                  value={form.name}
+                  onChange={handleChange("name")}
+                  placeholder="Your full name"
+                />
+              </label>
+              <label className="db-field-label">
+                Email
+                <input
+                  className="db-field-input"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange("email")}
+                  placeholder="your@email.com"
+                />
+              </label>
+              <label className="db-field-label">
+                Phone Number
+                <input
+                  className="db-field-input"
+                  type="tel"
+                  value={form.phone}
+                  onChange={handleChange("phone")}
+                  placeholder="+91 00000 00000"
+                />
+              </label>
+              <label className="db-field-label">
+                Job / Role
+                <input
+                  className="db-field-input"
+                  value={form.job}
+                  onChange={handleChange("job")}
+                  placeholder="e.g. Delivery Partner, Driver"
+                />
+              </label>
+            </div>
+          )}
+          {tab === "security" && (
+            <div className="db-modal-fields">
+              <label className="db-field-label">
+                Current Password
+                <input
+                  className="db-field-input"
+                  type="password"
+                  value={form.oldPassword}
+                  onChange={handleChange("oldPassword")}
+                  placeholder="Enter current password"
+                />
+              </label>
+              <label className="db-field-label">
+                New Password
+                <input
+                  className="db-field-input"
+                  type="password"
+                  value={form.newPassword}
+                  onChange={handleChange("newPassword")}
+                  placeholder="Min. 6 characters"
+                />
+              </label>
+              <label className="db-field-label">
+                Confirm New Password
+                <input
+                  className="db-field-input"
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={handleChange("confirmPassword")}
+                  placeholder="Repeat new password"
+                />
+              </label>
+            </div>
+          )}
+
+          {error   && <p className="db-modal-error">⚠ {error}</p>}
+          {success && <p className="db-modal-success">✓ {success}</p>}
+        </div>
+
+        <div className="db-modal-footer">
+          <button className="db-modal-cancel" onClick={onClose}>Cancel</button>
+          <button className="db-modal-save" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Page sections
 // ─────────────────────────────────────────────────────────────
 
 function EarningsPage({ todayEarnings, completedGigs }) {
@@ -185,149 +366,24 @@ function CommunityPage() {
   );
 }
 
-// ── CHANGE 4 ── AlertsPage replaced with full version ────────────────────────
-// REPLACE the entire AlertsPage function with:
 function AlertsPage() {
   const sectionTitle = {
     fontSize: 16, fontWeight: 700,
     margin: "0 0 16px",
-    color: "var(--text-primary, #e2e8f0)",
+    color: "var(--db-text)",
   };
   const divider = {
     border: "none",
-    borderTop: "1px solid var(--db-border, #2d3748)",
+    borderTop: "1px solid var(--db-border)",
     margin: "32px 0",
   };
-
   return (
     <div style={{ padding: "24px", maxWidth: 780 }}>
-
-      {/* ── Section 1: Risk Report Form ── */}
       <h2 style={sectionTitle}>Report a Risk</h2>
       <RiskReportForm />
-
       <hr style={divider} />
-
-      {/* ── Section 2: Safety Heatmap ── */}
       <h2 style={sectionTitle}>Safety Heatmap</h2>
       <HeatmapView />
-
-    </div>
-  );
-  
-  const reportCard = {
-    background: "var(--db-card, #1e2130)",
-    borderRadius: 10,
-    padding: "14px 18px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-  };
-  const categoryBadge = (cat) => {
-    const colors = {
-      theft:         { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.35)",   text: "#f87171" },
-      harassment:    { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.35)",  text: "#fb923c" },
-      accident:      { bg: "rgba(234,179,8,0.12)",   border: "rgba(234,179,8,0.35)",   text: "#facc15" },
-      "road hazard": { bg: "rgba(168,85,247,0.12)",  border: "rgba(168,85,247,0.35)",  text: "#c084fc" },
-      other:         { bg: "rgba(148,163,184,0.1)",  border: "rgba(148,163,184,0.2)",  text: "#94a3b8" },
-    };
-    const c = colors[cat] || colors.other;
-    return {
-      background: c.bg,
-      border: `1px solid ${c.border}`,
-      color: c.text,
-      borderRadius: 20,
-      padding: "3px 10px",
-      fontSize: 12,
-      fontWeight: 600,
-      textTransform: "capitalize",
-    };
-  };
-  const locationBadge = {
-    background: "rgba(59,130,246,0.1)",
-    border: "1px solid rgba(59,130,246,0.25)",
-    color: "#60a5fa",
-    borderRadius: 20,
-    padding: "3px 10px",
-    fontSize: 12,
-    fontWeight: 500,
-  };
-
-  const formatDate = (iso) => {
-    if (!iso) return "—";
-    return new Date(iso).toLocaleDateString("en-IN", {
-      day: "numeric", month: "short", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    });
-  };
-
-  return (
-    <div style={{ padding: "24px", maxWidth: 780 }}>
-
-      {/* ── Section 1: Risk Report Form ── */}
-      <h2 style={sectionTitle}>Report a Risk</h2>
-      <RiskReportForm />
-
-      <hr style={divider} />
-
-      {/* ── Section 2: Community Alert History ── */}
-      <h2 style={sectionTitle}>Recent Community Reports</h2>
-
-      {loading && (
-        <p style={{ color: "var(--db-muted, #94a3b8)", fontSize: 14 }}>Loading reports…</p>
-      )}
-
-      {error && (
-        <p style={{ color: "#f87171", fontSize: 14 }}>❌ {error}</p>
-      )}
-
-      {!loading && !error && reports.length === 0 && (
-        <p style={{ color: "var(--db-muted, #94a3b8)", fontSize: 14 }}>No community reports yet.</p>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {reports.map((r, i) => (
-          <div key={r._id || i} style={reportCard}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <span style={categoryBadge(r.category)}>{r.category}</span>
-              <span style={{ fontSize: 13, color: "var(--db-muted, #94a3b8)" }}>
-                {formatDate(r.reportedAt)}
-              </span>
-            </div>
-            {r.location?.coordinates && (
-              <span style={locationBadge}>
-                📍 {r.location.coordinates[1]?.toFixed(3)},{" "}
-                {r.location.coordinates[0]?.toFixed(3)}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ProfilePage({ user, language, theme }) {
-  return (
-    <div className="db-card">
-      <div className="db-card-header">
-        <div>
-          <span className="db-card-eyebrow">Profile</span>
-          <h3 className="db-card-title">Your Account</h3>
-        </div>
-      </div>
-      <p style={{ fontSize: 14, marginBottom: 16 }}>
-        Basic information and preferences for your GigShield account.
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <div><div className="db-meta-label">Name</div><div className="db-meta-value">{user?.name || "—"}</div></div>
-        <div><div className="db-meta-label">Email</div><div className="db-meta-value">{user?.email || "—"}</div></div>
-        <div><div className="db-meta-label">Worker ID</div><div className="db-meta-value">{user?.workerId || "—"}</div></div>
-        <div><div className="db-meta-label">Current language</div><div className="db-meta-value">{language === "en" ? "English" : "Hindi"}</div></div>
-        <div><div className="db-meta-label">Theme</div><div className="db-meta-value">{theme === "light" ? "Light" : "Dark"}</div></div>
-      </div>
     </div>
   );
 }
@@ -339,26 +395,29 @@ function ProfilePage({ user, language, theme }) {
 export default function GigShieldDashboard() {
   const navigate = useNavigate();
 
-  // ── UI state (unchanged from your original) ───────────────
-  const [activeNav,    setActiveNav]    = useState("home");
-  const [mapMode,      setMapMode]      = useState("SAFETY");
-  const [alertAck,     setAlertAck]     = useState(false);
-  const [searchQuery,  setSearchQuery]  = useState("");
-  const [searchOpen,   setSearchOpen]   = useState(false);
-  const [notifOpen,    setNotifOpen]    = useState(false);
-  const [faqOpen,      setFaqOpen]      = useState(false);
-  const [faqInput,     setFaqInput]     = useState("");
-  const [profileOpen,  setProfileOpen]  = useState(false);
-  const [theme,        setTheme]        = useState("light");
-  const [language,     setLanguage]     = useState("en");
-  const [faqItems,     setFaqItems]     = useState([
-    { id: 1, question: "How does GigShield track my shifts?", answer: "Admin: Shifts are tracked using GPS check-ins and app activity logs." },
+  // ── UI state ───────────────────────────────────────────────
+  const [activeNav,       setActiveNav]       = useState("home");
+  const [mapMode,         setMapMode]         = useState("SAFETY");
+  const [alertAck,        setAlertAck]        = useState(false);
+  const [searchQuery,     setSearchQuery]     = useState("");
+  const [searchOpen,      setSearchOpen]      = useState(false);
+  const [notifOpen,       setNotifOpen]       = useState(false);
+  const [faqOpen,         setFaqOpen]         = useState(false);
+  const [faqInput,        setFaqInput]        = useState("");
+  const [profileOpen,     setProfileOpen]     = useState(false);
+  const [accountOpen,     setAccountOpen]     = useState(false);
+  const [theme,           setTheme]           = useState(() => localStorage.getItem("gs_theme") || "light");
+  const [language,        setLanguage]        = useState(() => localStorage.getItem("gs_lang") || "en");
+  const [faqItems,        setFaqItems]        = useState([
+    { id: 1, question: "How does GigShield track my shifts?", answer: "Shifts are tracked using GPS check-ins and app activity logs." },
   ]);
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: NOTIFICATION_TYPES.SHIFT_START, message: "Shift started at 11:30 AM", read: false },
-  ]);
+  const [notifications,   setNotifications]   = useState([]);
+  const [shiftStart, setShiftStart] = useState(() => {
+  const saved = localStorage.getItem("shiftStart");
+  return saved ? new Date(saved) : null;
+});
 
-  // ── Live data state ───────────────────────────────────────
+  // ── Live data state ────────────────────────────────────────
   const [user,        setUser]        = useState(null);
   const [gigs,        setGigs]        = useState([]);
   const [alerts,      setAlerts]      = useState([]);
@@ -366,11 +425,39 @@ export default function GigShieldDashboard() {
   const [apiError,    setApiError]    = useState("");
   const [gigLoading,  setGigLoading]  = useState(false);
 
-  // ── Theme / lang effects (unchanged) ─────────────────────
-  useEffect(() => { document.documentElement.setAttribute("data-theme", theme); }, [theme]);
+  // ── Live timer state ───────────────────────────────────────
+  const [liveMs,    setLiveMs]    = useState(0);   // ms elapsed since shift start
+  const timerRef = useRef(null);
+
+  // ── Theme / lang effects ───────────────────────────────────
+  useEffect(() => {
+  const now = new Date();
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+
+  const timeout = setTimeout(() => {
+    localStorage.removeItem("shiftStart");
+    setShiftStart(null);
+
+    setNotifications((n) => [
+      {
+        id: Date.now(),
+        type: "RESET",
+        title: "New Day Started",
+        message: "Shift reset for new day",
+        read: false,
+        timestamp: new Date().toISOString(),
+      },
+      ...n,
+    ]);
+  }, midnight - now);
+
+  return () => clearTimeout(timeout);
+}, []);
+
   useEffect(() => { localStorage.setItem("gs_lang", language); }, [language]);
 
-  // ── Fetch live data ───────────────────────────────────────
+  // ── Fetch live data ────────────────────────────────────────
   const fetchAll = useCallback(async () => {
     setLoadingData(true);
     setApiError("");
@@ -398,15 +485,52 @@ export default function GigShieldDashboard() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // ── Derived values ────────────────────────────────────────
+  // ── Daily notification reset at midnight ──────────────────
+  useEffect(() => {
+    const now = new Date();
+    const msUntilMidnight =
+      new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now;
+    const t = setTimeout(() => {
+      // Clear today's shift notifications at midnight; keep others
+      setNotifications((prev) =>
+        prev.filter((n) => !["SHIFT_START", "SHIFT_END", "SHIFT_TOTAL"].includes(n.type))
+      );
+    }, msUntilMidnight);
+    return () => clearTimeout(t);
+  }, []);
+
+  // ── Derived values ─────────────────────────────────────────
   const activeGig     = gigs.find((g) => g.status === "active") || null;
   const completedGigs = gigs.filter((g) => g.status === "completed");
-  const shiftOn       = !!activeGig;
+  const shiftOn = !!shiftStart;
+
+  // ── Live timer: tick every minute while shift is on ────────
+  useEffect(() => {
+  if (!shiftStart) return;
+
+  const interval = setInterval(() => {
+    setLiveMs(Date.now() - new Date(shiftStart).getTime());
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [shiftStart]);
+
+  // ── Today's worked time (completed gigs today + live) ──────
+ const todayWorkedMs = useMemo(() => {
+  if (!shiftStart) return 0;
+
+  const now = new Date();
+  const start = new Date(shiftStart);
+
+  if (!isSameDay(start, now)) return 0;
+
+  return now - start;
+}, [shiftStart]);
 
   const todayEarnings = useMemo(() => {
     const today = new Date().toDateString();
     return completedGigs
-      .filter((g) => new Date(g.endTime).toDateString() === today)
+      .filter((g) => g.endTime && new Date(g.endTime).toDateString() === today)
       .reduce((s, g) => s + (g.earnings || 0), 0);
   }, [completedGigs]);
 
@@ -424,26 +548,57 @@ export default function GigShieldDashboard() {
     [notifications]
   );
 
-  // ── Gig actions ───────────────────────────────────────────
+  // ── Gig actions ────────────────────────────────────────────
   const toggleShift = async () => {
-    if (gigLoading) return;
-    setGigLoading(true);
-    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    try {
-      if (activeGig) {
-        await api.post(`/gigs/${activeGig._id}/complete`);
-        setNotifications((n) => [{ id: Date.now(), type: NOTIFICATION_TYPES.SHIFT_END,   message: `Shift ended at ${time}`,   read: false }, ...n]);
-      } else {
-        await api.post("/gigs/start");
-        setNotifications((n) => [{ id: Date.now(), type: NOTIFICATION_TYPES.SHIFT_START, message: `Shift started at ${time}`, read: false }, ...n]);
-      }
-      await fetchAll();
-    } catch (err) {
-      setApiError(err.response?.data?.message || "Shift action failed.");
-    } finally {
-      setGigLoading(false);
+  if (gigLoading) return;
+  setGigLoading(true);
+
+  const now = new Date();
+
+  try {
+    if (shiftStart) {
+      // SHIFT OFF
+      localStorage.removeItem("shiftStart");
+
+      const workedMs = now - shiftStart;
+
+      setNotifications((n) => [
+        {
+          id: Date.now(),
+          type: "SHIFT_END",
+          icon: "logout",
+          title: "Shift Ended",
+          message: `Worked ${msToHHMM(workedMs)}`,
+          read: false,
+          timestamp: now.toISOString(),
+        },
+        ...n,
+      ]);
+
+      setShiftStart(null);
+
+    } else {
+      // SHIFT ON
+      localStorage.setItem("shiftStart", now.toISOString());
+      setShiftStart(now);
+
+      setNotifications((n) => [
+        {
+          id: Date.now(),
+          type: "SHIFT_START",
+          icon: "login",
+          title: "Shift Started",
+          message: `Started at ${fmtTime(now)}`,
+          read: false,
+          timestamp: now.toISOString(),
+        },
+        ...n,
+      ]);
     }
-  };
+  } finally {
+    setGigLoading(false);
+  }
+};
 
   const markAllNotificationsRead = () =>
     setNotifications((n) => n.map((item) => ({ ...item, read: true })));
@@ -455,7 +610,7 @@ export default function GigShieldDashboard() {
     setFaqInput("");
   };
 
-  // ── Logout ────────────────────────────────────────────────
+  // ── Logout ─────────────────────────────────────────────────
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("gs_token");
@@ -463,46 +618,37 @@ export default function GigShieldDashboard() {
     navigate("/login");
   };
 
-  // ── CHANGE 2 ── Emergency SOS with geolocation + API call ─
+  // ── Emergency SOS ──────────────────────────────────────────
   const handleSOS = async () => {
     const confirmed = window.confirm("Send SOS alert to emergency contacts?");
     if (!confirmed) return;
-
     const getCoords = () =>
       new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error("Geolocation not supported"));
-          return;
-        }
+        if (!navigator.geolocation) { reject(new Error("Geolocation not supported")); return; }
         navigator.geolocation.getCurrentPosition(
           (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
           (err) => reject(err)
         );
       });
-
     try {
-      let coordinates = [0, 0]; // fallback if location denied
+      let coordinates = [0, 0];
       try {
         const { lat, lng } = await getCoords();
-        coordinates = [lng, lat]; // GeoJSON order: [longitude, latitude]
-      } catch {
-        // location unavailable — still send SOS without precise coords
-      }
-
+        coordinates = [lng, lat];
+      } catch { /* location unavailable */ }
       await api.post("/safety/sos", {
         location: { coordinates },
         message: "SOS triggered by worker",
       });
-
-      setNotifications((n) => [
-        {
-          id: Date.now(),
-          type: "Emergency SOS",
-          message: "Emergency SOS was triggered from this device.",
-          read: false,
-        },
-        ...n,
-      ]);
+      setNotifications((n) => [{
+        id: Date.now(),
+        type: "SOS",
+        icon: "emergency_share",
+        title: "Emergency SOS",
+        message: "Emergency SOS was triggered from this device.",
+        read: false,
+        timestamp: new Date().toISOString(),
+      }, ...n]);
       window.alert("🆘 SOS Alert Sent!");
     } catch (err) {
       const msg = err?.response?.data?.message || "Failed to send SOS. Try again.";
@@ -510,20 +656,34 @@ export default function GigShieldDashboard() {
     }
   };
 
-  // ── Display helpers ───────────────────────────────────────
+  // ── Profile update callback ─────────────────────────────────
+  const handleProfileUpdate = (updated) => {
+    setUser((prev) => ({ ...prev, ...updated }));
+  };
+
+  // ── Display helpers ────────────────────────────────────────
   const displayName = user?.name || "Worker";
   const firstName   = displayName.split(" ")[0];
   const initials    = displayName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   const greeting    = new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening";
 
-  // ── Page renderer ─────────────────────────────────────────
+  // Live display string for the timer card
+  const liveTimerStr = useMemo(() => {
+    const ms = shiftOn ? liveMs : todayWorkedMs;
+    const h = String(Math.floor(ms / 3600000)).padStart(2, "0");
+    const m = String(Math.floor((ms % 3600000) / 60000)).padStart(2, "0");
+    const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, "0");
+    return `${h}:${m}:${s}`;
+  }, [shiftOn, liveMs, todayWorkedMs]);
+
+  // ── Page renderer ──────────────────────────────────────────
   const renderPage = () => {
     if (activeNav === "earnings")
       return <EarningsPage todayEarnings={todayEarnings} completedGigs={completedGigs} />;
     if (activeNav === "history")
       return <ShiftHistoryPage completedGigs={completedGigs} loading={loadingData} />;
     if (activeNav === "community") return <CommunityPage />;
-    if (activeNav === "alerts")   return <AlertsPage />;  // ── CHANGE 3 ── wired to new AlertsPage
+    if (activeNav === "alerts")   return <AlertsPage />;
     if (activeNav === "home") {
       return (
         <>
@@ -548,10 +708,10 @@ export default function GigShieldDashboard() {
                 <div className="db-session-left">
                   <span className="db-card-eyebrow">Current Session</span>
                   <div className="db-session-time">
-                    <span className="db-session-hrs">
-                      {activeGig ? shiftDuration(activeGig.startTime) : "00:00"}
+                    <span className={`db-session-hrs ${shiftOn ? "db-session-hrs--live" : ""}`}>
+                      {liveTimerStr}
                     </span>
-                    <span className="db-session-unit">HRS</span>
+                    {shiftOn && <span className="db-session-live-dot" title="Live" />}
                   </div>
                   <div className="db-session-meta">
                     <div className="db-session-meta-item">
@@ -571,10 +731,10 @@ export default function GigShieldDashboard() {
                     </div>
                     <div className="db-session-meta-divider" />
                     <div className="db-session-meta-item">
-                      <span className="db-meta-label">Distance Today</span>
+                      <span className="db-meta-label">Today Worked</span>
                       <span className="db-meta-value">
-                        <Icon name="route" style={{ fontSize: 14 }} />
-                        34.2 km
+                        <Icon name="schedule" style={{ fontSize: 14 }} />
+                        {msToHHMM(todayWorkedMs)}
                       </span>
                     </div>
                   </div>
@@ -749,10 +909,10 @@ export default function GigShieldDashboard() {
         </>
       );
     }
-    return <ProfilePage user={user} language={language} theme={theme} />;
+    return null;
   };
 
-  // ── Loading screen ────────────────────────────────────────
+  // ── Loading screen ─────────────────────────────────────────
   if (loadingData) {
     return (
       <div className="db-root" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -771,7 +931,7 @@ export default function GigShieldDashboard() {
     );
   }
 
-  // ── Main render ───────────────────────────────────────────
+  // ── Main render ────────────────────────────────────────────
   return (
     <div className="db-root">
       <link
@@ -820,7 +980,7 @@ export default function GigShieldDashboard() {
               onClick={() => { setNotifOpen((o) => !o); if (!notifOpen) markAllNotificationsRead(); }}
             >
               <Icon name="notifications" />
-              {unreadCount > 0 && <span className="db-notif-dot" />}
+              {unreadCount > 0 && <span className="db-notif-dot">{unreadCount > 9 ? "9+" : unreadCount}</span>}
             </button>
             {notifOpen && (
               <div className="db-notif-dropdown">
@@ -829,19 +989,33 @@ export default function GigShieldDashboard() {
                   <span className="db-notif-count">{unreadCount} new</span>
                 </div>
                 {notifications.length === 0 ? (
-                  <div className="db-notif-empty">No notifications yet.</div>
-                ) : notifications.slice(0, 6).map((n) => (
-                  <div key={n.id} className="db-notif-item">
-                    <Icon
-                      name={n.type === NOTIFICATION_TYPES.EARNING ? "currency_rupee" : n.type === NOTIFICATION_TYPES.SHIFT_END ? "logout" : "login"}
-                      className="db-notif-icon"
-                    />
+                  <div className="db-notif-empty">
+                    <Icon name="notifications_none" style={{ fontSize: 28, color: "var(--db-muted)", marginBottom: 6 }} />
+                    <p>No notifications yet.</p>
+                    <p style={{ fontSize: 11 }}>Start a shift to see updates here.</p>
+                  </div>
+                ) : notifications.slice(0, 8).map((n) => (
+                  <div key={n.id} className={`db-notif-item ${n.type === "SHIFT_START" ? "db-notif-item--start" : n.type === "SHIFT_END" ? "db-notif-item--end" : n.type === "SHIFT_TOTAL" ? "db-notif-item--total" : ""}`}>
+                    <div className="db-notif-icon-wrap">
+                      <Icon
+                        name={n.icon || (n.type === "SHIFT_START" ? "login" : n.type === "SHIFT_END" ? "logout" : "schedule")}
+                        className="db-notif-icon"
+                      />
+                    </div>
                     <div className="db-notif-body">
-                      <div className="db-notif-title">{n.type}</div>
+                      <div className="db-notif-title">{n.title || n.type}</div>
                       <div className="db-notif-message">{n.message}</div>
+                      {n.timestamp && (
+                        <div className="db-notif-time">{fmtTime(n.timestamp)}</div>
+                      )}
                     </div>
                   </div>
                 ))}
+                {notifications.length > 8 && (
+                  <div className="db-notif-more">
+                    +{notifications.length - 8} more notifications
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -850,7 +1024,7 @@ export default function GigShieldDashboard() {
             <Icon name="help_outline" />
           </button>
 
-          {/* Profile dropdown */}
+          {/* Profile dropdown — simplified */}
           <div className="db-profile-wrapper">
             <button className="db-avatar" onClick={() => setProfileOpen((o) => !o)}>
               {initials}
@@ -861,28 +1035,41 @@ export default function GigShieldDashboard() {
                   <div className="db-profile-name">{displayName}</div>
                   <div className="db-profile-email">{user?.email || ""}</div>
                 </div>
-                <button className="db-profile-item" onClick={() => alert("Account settings coming soon.")}>
-                  <Icon name="manage_accounts" /><span>Account settings</span>
+
+                {/* Account Settings */}
+                <button
+                  className="db-profile-item"
+                  onClick={() => { navigate("/account"); setProfileOpen(false);}}
+                >
+                  <Icon name="manage_accounts" /><span>Account Settings</span>
                 </button>
-                <button className="db-profile-item" onClick={() => alert("Notification preferences coming soon.")}>
-                  <Icon name="notifications_active" /><span>Notification preferences</span>
-                </button>
-                <button className="db-profile-item" onClick={() => setTheme((t) => t === "light" ? "dark" : "light")}>
+
+                {/* Dark / Light mode */}
+                <button
+                  className="db-profile-item"
+                  onClick={() => setTheme((t) => t === "light" ? "dark" : "light")}
+                >
                   <Icon name={theme === "light" ? "dark_mode" : "light_mode"} />
-                  <span>Switch to {theme === "light" ? "Dark" : "Light"} mode</span>
+                  <span>{theme === "light" ? "Dark Mode" : "Light Mode"}</span>
                 </button>
-                <div className="db-profile-item" style={{ cursor: "default" }}>
+
+                {/* Language */}
+                <div className="db-profile-item db-profile-item--lang">
                   <Icon name="translate" />
                   <span style={{ flex: 1 }}>Language</span>
-                  <select value={language} onChange={(e) => setLanguage(e.target.value)} className="db-lang-select">
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="db-lang-select"
+                  >
                     <option value="en">English</option>
                     <option value="hi">हिन्दी</option>
                   </select>
                 </div>
-                <button className="db-profile-item" onClick={() => { setFaqOpen(true); setProfileOpen(false); }}>
-                  <Icon name="help_center" /><span>FAQ & support</span>
-                </button>
-                <button className="db-profile-item" onClick={handleLogout}>
+
+                {/* Logout */}
+                <div className="db-profile-divider" />
+                <button className="db-profile-item db-profile-item--logout" onClick={handleLogout}>
                   <Icon name="logout" /><span>Logout</span>
                 </button>
               </div>
@@ -896,10 +1083,11 @@ export default function GigShieldDashboard() {
         <div className="db-sidebar-user">
           <div className="db-sidebar-avatar">{initials}</div>
           <div>
-            <div className="db-sidebar-name">{firstName}</div>
+            {/* Show actual user name from database */}
+            <div className="db-sidebar-name">{displayName}</div>
             <div className="db-sidebar-tier">
               <span className="db-tier-dot" />
-              Professional Shield
+              {user?.job || "Professional Shield"}
             </div>
           </div>
         </div>
@@ -915,7 +1103,6 @@ export default function GigShieldDashboard() {
             </button>
           ))}
         </nav>
-        {/* ── CHANGE 2 ── SOS button now calls handleSOS ── */}
         <div className="db-sos-btn-wrap">
           <button className="db-sos-btn" onClick={handleSOS}>
             <Icon name="emergency_share" fill={1} className="db-sos-icon" />
@@ -937,11 +1124,13 @@ export default function GigShieldDashboard() {
             <p className="db-page-sub">
               {activeNav === "home"
                 ? shiftOn
-                  ? "Your shift is active and monitored by GigShield Guardian."
+                  ? `Shift active — ${msToHHMM(liveMs)} and counting. GigShield is monitoring.`
                   : "No active shift. Click SHIFT OFF to start monitoring."
                 : "View and manage your work with GigShield."}
             </p>
           </div>
+
+          {/* Shift Toggle */}
           <button
             className={`db-shift-toggle ${shiftOn ? "db-shift-toggle--on" : "db-shift-toggle--off"}`}
             onClick={toggleShift}
