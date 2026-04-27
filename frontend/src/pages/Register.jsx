@@ -5,12 +5,12 @@ import api from "../api/axios"; // your axios instance with JWT interceptor
 import gigshieldLogo from "../assets/Gigshield Logo.png";
 
 const WORKER_TYPES = [
-  { value: "delivery", label: "🛵 Delivery" },
-  { value: "driver", label: "🚗 Driver" },
-  { value: "freelancer", label: "💻 Freelancer" },
-  { value: "domestic", label: "🏠 Domestic Worker" },
-  { value: "construction", label: "🏗 Construction" },
-  { value: "other", label: "⚙️ Other" },
+  { value: "Delivery", label: "🛵 Delivery" },
+  { value: "Driver", label: "🚗 Driver" },
+  { value: "Freelancer", label: "💻 Freelancer" },
+  { value: "Domestic", label: "🏠 Domestic Worker" },
+  { value: "Construction", label: "🏗 Construction" },
+  { value: "Other", label: "⚙️ Other" },
 ];
 
 export default function Register() {
