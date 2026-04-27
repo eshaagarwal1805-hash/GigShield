@@ -3,6 +3,8 @@ import "../styles/Dashboard.css";
 import gigshieldLogo from "../assets/Gigshield Logo.png";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios"; // ← the new axios file
+import RiskReportForm from "./RiskReportForm"; // ── CHANGE 1 ──
+import HeatmapView    from "./HeatmapView";     // ← ADDed in CHANGE 1, shows safety heatmap with community reports
 
 // ─────────────────────────────────────────────────────────────
 //  Constants
@@ -183,39 +185,125 @@ function CommunityPage() {
   );
 }
 
-function AlertsPage({ alerts }) {
+// ── CHANGE 4 ── AlertsPage replaced with full version ────────────────────────
+// REPLACE the entire AlertsPage function with:
+function AlertsPage() {
+  const sectionTitle = {
+    fontSize: 16, fontWeight: 700,
+    margin: "0 0 16px",
+    color: "var(--text-primary, #e2e8f0)",
+  };
+  const divider = {
+    border: "none",
+    borderTop: "1px solid var(--db-border, #2d3748)",
+    margin: "32px 0",
+  };
+
   return (
-    <div className="db-card">
-      <div className="db-card-header">
-        <div>
-          <span className="db-card-eyebrow">Alerts</span>
-          <h3 className="db-card-title">Recent Safety Alerts</h3>
-        </div>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {alerts.map((a, i) => (
-          <div key={i} style={{
-            padding: 12, borderRadius: 10,
-            border: "1px solid var(--db-red-bdr)",
-            background: "var(--db-red-bg)", fontSize: 13,
-          }}>
-            <strong>{a.title || "Safety Alert"}</strong><br />
-            {a.message || a}
+    <div style={{ padding: "24px", maxWidth: 780 }}>
+
+      {/* ── Section 1: Risk Report Form ── */}
+      <h2 style={sectionTitle}>Report a Risk</h2>
+      <RiskReportForm />
+
+      <hr style={divider} />
+
+      {/* ── Section 2: Safety Heatmap ── */}
+      <h2 style={sectionTitle}>Safety Heatmap</h2>
+      <HeatmapView />
+
+    </div>
+  );
+  
+  const reportCard = {
+    background: "var(--db-card, #1e2130)",
+    borderRadius: 10,
+    padding: "14px 18px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    flexWrap: "wrap",
+  };
+  const categoryBadge = (cat) => {
+    const colors = {
+      theft:         { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.35)",   text: "#f87171" },
+      harassment:    { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.35)",  text: "#fb923c" },
+      accident:      { bg: "rgba(234,179,8,0.12)",   border: "rgba(234,179,8,0.35)",   text: "#facc15" },
+      "road hazard": { bg: "rgba(168,85,247,0.12)",  border: "rgba(168,85,247,0.35)",  text: "#c084fc" },
+      other:         { bg: "rgba(148,163,184,0.1)",  border: "rgba(148,163,184,0.2)",  text: "#94a3b8" },
+    };
+    const c = colors[cat] || colors.other;
+    return {
+      background: c.bg,
+      border: `1px solid ${c.border}`,
+      color: c.text,
+      borderRadius: 20,
+      padding: "3px 10px",
+      fontSize: 12,
+      fontWeight: 600,
+      textTransform: "capitalize",
+    };
+  };
+  const locationBadge = {
+    background: "rgba(59,130,246,0.1)",
+    border: "1px solid rgba(59,130,246,0.25)",
+    color: "#60a5fa",
+    borderRadius: 20,
+    padding: "3px 10px",
+    fontSize: 12,
+    fontWeight: 500,
+  };
+
+  const formatDate = (iso) => {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString("en-IN", {
+      day: "numeric", month: "short", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  };
+
+  return (
+    <div style={{ padding: "24px", maxWidth: 780 }}>
+
+      {/* ── Section 1: Risk Report Form ── */}
+      <h2 style={sectionTitle}>Report a Risk</h2>
+      <RiskReportForm />
+
+      <hr style={divider} />
+
+      {/* ── Section 2: Community Alert History ── */}
+      <h2 style={sectionTitle}>Recent Community Reports</h2>
+
+      {loading && (
+        <p style={{ color: "var(--db-muted, #94a3b8)", fontSize: 14 }}>Loading reports…</p>
+      )}
+
+      {error && (
+        <p style={{ color: "#f87171", fontSize: 14 }}>❌ {error}</p>
+      )}
+
+      {!loading && !error && reports.length === 0 && (
+        <p style={{ color: "var(--db-muted, #94a3b8)", fontSize: 14 }}>No community reports yet.</p>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {reports.map((r, i) => (
+          <div key={r._id || i} style={reportCard}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={categoryBadge(r.category)}>{r.category}</span>
+              <span style={{ fontSize: 13, color: "var(--db-muted, #94a3b8)" }}>
+                {formatDate(r.reportedAt)}
+              </span>
+            </div>
+            {r.location?.coordinates && (
+              <span style={locationBadge}>
+                📍 {r.location.coordinates[1]?.toFixed(3)},{" "}
+                {r.location.coordinates[0]?.toFixed(3)}
+              </span>
+            )}
           </div>
         ))}
-        {/* Static community alerts always shown */}
-        <div style={{
-          padding: 12, borderRadius: 10,
-          border: "1px solid var(--db-red-bdr)",
-          background: "var(--db-red-bg)", fontSize: 13,
-        }}>
-          <strong>Unsafe Area · HSR Layout Sector 2</strong><br />
-          Multiple incidents reported this week after 9PM. Prefer main roads and well-lit areas.
-        </div>
-        <div style={{ padding: 12, borderRadius: 10, border: "1px solid var(--db-border)", fontSize: 13 }}>
-          <strong>Heavy Rain Alert · Today Evening</strong><br />
-          Expect slower trips and low visibility. Keep rain gear ready and avoid speeding.
-        </div>
       </div>
     </div>
   );
@@ -349,7 +437,7 @@ export default function GigShieldDashboard() {
         await api.post("/gigs/start");
         setNotifications((n) => [{ id: Date.now(), type: NOTIFICATION_TYPES.SHIFT_START, message: `Shift started at ${time}`, read: false }, ...n]);
       }
-      await fetchAll(); // refresh all cards
+      await fetchAll();
     } catch (err) {
       setApiError(err.response?.data?.message || "Shift action failed.");
     } finally {
@@ -367,7 +455,7 @@ export default function GigShieldDashboard() {
     setFaqInput("");
   };
 
-  // ── Logout — clears token, navigates to /login ────────────
+  // ── Logout ────────────────────────────────────────────────
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("gs_token");
@@ -375,14 +463,51 @@ export default function GigShieldDashboard() {
     navigate("/login");
   };
 
-  // ── Emergency SOS (unchanged) ─────────────────────────────
-  const handleEmergencySOS = () => {
-    const ok = window.confirm(
-      "Trigger Emergency SOS? This will alert GigShield Dispatch and your emergency contacts."
-    );
-    if (!ok) return;
-    setNotifications((n) => [{ id: Date.now(), type: "Emergency SOS", message: "Emergency SOS was triggered from this device.", read: false }, ...n]);
-    alert("SOS triggered. GigShield Dispatch and your registered contacts have been notified.");
+  // ── CHANGE 2 ── Emergency SOS with geolocation + API call ─
+  const handleSOS = async () => {
+    const confirmed = window.confirm("Send SOS alert to emergency contacts?");
+    if (!confirmed) return;
+
+    const getCoords = () =>
+      new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("Geolocation not supported"));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          (err) => reject(err)
+        );
+      });
+
+    try {
+      let coordinates = [0, 0]; // fallback if location denied
+      try {
+        const { lat, lng } = await getCoords();
+        coordinates = [lng, lat]; // GeoJSON order: [longitude, latitude]
+      } catch {
+        // location unavailable — still send SOS without precise coords
+      }
+
+      await api.post("/safety/sos", {
+        location: { coordinates },
+        message: "SOS triggered by worker",
+      });
+
+      setNotifications((n) => [
+        {
+          id: Date.now(),
+          type: "Emergency SOS",
+          message: "Emergency SOS was triggered from this device.",
+          read: false,
+        },
+        ...n,
+      ]);
+      window.alert("🆘 SOS Alert Sent!");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Failed to send SOS. Try again.";
+      window.alert(`❌ ${msg}`);
+    }
   };
 
   // ── Display helpers ───────────────────────────────────────
@@ -398,7 +523,7 @@ export default function GigShieldDashboard() {
     if (activeNav === "history")
       return <ShiftHistoryPage completedGigs={completedGigs} loading={loadingData} />;
     if (activeNav === "community") return <CommunityPage />;
-    if (activeNav === "alerts")   return <AlertsPage alerts={alerts} />;
+    if (activeNav === "alerts")   return <AlertsPage />;  // ── CHANGE 3 ── wired to new AlertsPage
     if (activeNav === "home") {
       return (
         <>
@@ -416,7 +541,7 @@ export default function GigShieldDashboard() {
 
           <div className="db-grid">
 
-            {/* Current Session — live shift duration */}
+            {/* Current Session */}
             <div className="db-card db-card--session">
               <div className="db-card-bg-circle" />
               <div className="db-session-content">
@@ -457,7 +582,7 @@ export default function GigShieldDashboard() {
               </div>
             </div>
 
-            {/* Earnings — live value */}
+            {/* Earnings */}
             <div className="db-card db-card--earnings">
               <div className="db-card-header">
                 <span className="db-card-eyebrow">Today's Earnings</span>
@@ -483,7 +608,7 @@ export default function GigShieldDashboard() {
               </div>
             </div>
 
-            {/* Alert card — first live alert or fallback */}
+            {/* Alert card */}
             <div className="db-card db-card--alert">
               <div className="db-alert-header">
                 <Icon name="report" fill={1} className="db-alert-icon" />
@@ -502,7 +627,7 @@ export default function GigShieldDashboard() {
               </button>
             </div>
 
-            {/* Safety Health (static — unchanged) */}
+            {/* Safety Health */}
             <div className="db-card db-card--score">
               <div className="db-score-header">
                 <div>
@@ -546,7 +671,7 @@ export default function GigShieldDashboard() {
               </div>
             </div>
 
-            {/* City Heatmap (unchanged) */}
+            {/* City Heatmap */}
             <div className="db-card db-card--map">
               <div className="db-card-header">
                 <div>
@@ -592,7 +717,7 @@ export default function GigShieldDashboard() {
               </div>
             </div>
 
-            {/* Expert Advice (unchanged) */}
+            {/* Expert Advice */}
             <div className="db-card db-card--advice">
               <div className="db-card-header">
                 <h3 className="db-card-title">Expert Advice</h3>
@@ -725,7 +850,7 @@ export default function GigShieldDashboard() {
             <Icon name="help_outline" />
           </button>
 
-          {/* Profile dropdown — live name / email */}
+          {/* Profile dropdown */}
           <div className="db-profile-wrapper">
             <button className="db-avatar" onClick={() => setProfileOpen((o) => !o)}>
               {initials}
@@ -790,8 +915,9 @@ export default function GigShieldDashboard() {
             </button>
           ))}
         </nav>
+        {/* ── CHANGE 2 ── SOS button now calls handleSOS ── */}
         <div className="db-sos-btn-wrap">
-          <button className="db-sos-btn" onClick={handleEmergencySOS}>
+          <button className="db-sos-btn" onClick={handleSOS}>
             <Icon name="emergency_share" fill={1} className="db-sos-icon" />
             <span>Emergency SOS</span>
           </button>
@@ -816,7 +942,6 @@ export default function GigShieldDashboard() {
                 : "View and manage your work with GigShield."}
             </p>
           </div>
-          {/* Shift toggle calls real API */}
           <button
             className={`db-shift-toggle ${shiftOn ? "db-shift-toggle--on" : "db-shift-toggle--off"}`}
             onClick={toggleShift}
@@ -830,7 +955,7 @@ export default function GigShieldDashboard() {
         {renderPage()}
       </main>
 
-      {/* FAQ Drawer (unchanged) */}
+      {/* FAQ Drawer */}
       {faqOpen && (
         <div className="db-faq-overlay" onClick={() => setFaqOpen(false)}>
           <div className="db-faq-panel" onClick={(e) => e.stopPropagation()}>

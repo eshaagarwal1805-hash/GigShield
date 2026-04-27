@@ -3,9 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const Employer = require('../models/Employer');
-const JobPosting = require('../models/JobPosting');
-const authMiddleware = require('../middleware/authMiddleware');
-
+const JobPosting = require('../models/Jobposting');
+const { protect } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 // ─── POST /api/employer/register ─────────────────────────────────────────────
@@ -90,7 +89,7 @@ router.post('/login', async (req, res) => {
 
 // ─── POST /api/employer/jobs ──────────────────────────────────────────────────
 // Protected — create a new job posting for the authenticated employer
-router.post('/jobs', authMiddleware, async (req, res) => {
+router.post('/jobs', protect, async (req, res) => {
   try {
     const { title, platform, pay, location, description } = req.body;
 
@@ -116,7 +115,7 @@ router.post('/jobs', authMiddleware, async (req, res) => {
 
 // ─── GET /api/employer/jobs ───────────────────────────────────────────────────
 // Protected — list all job postings belonging to the authenticated employer
-router.get('/jobs', authMiddleware, async (req, res) => {
+router.get('/jobs', protect, async (req, res) => {
   try {
     const jobs = await JobPosting.find({ employerId: req.user.id }).sort({ postedAt: -1 });
     return res.status(200).json(jobs);
