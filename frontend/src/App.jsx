@@ -6,6 +6,7 @@ import Dashboard         from "./pages/Dashboard";
 import EmployerLogin     from "./pages/EmployerLogin";
 import EmployerRegister  from "./pages/EmployerRegister";
 import EmployerDashboard from "./pages/EmployerDashboard";
+import { useEffect } from "react";
 
 // ── Auth guards ───────────────────────────────────────────────
 const PrivateRoute  = ({ children }) =>
@@ -16,6 +17,10 @@ const EmployerRoute = ({ children }) =>
 
 // ─────────────────────────────────────────────────────────────
 export default function App() {
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("gs_theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  }, []);
   return (
     <Routes>
 
@@ -33,7 +38,7 @@ export default function App() {
           </PrivateRoute>
         }
       />
-
+  
       {/* ── Employer pages ── */}
       <Route path="/employer/login"    element={<EmployerLogin />}    />
       <Route path="/employer/register" element={<EmployerRegister />} />

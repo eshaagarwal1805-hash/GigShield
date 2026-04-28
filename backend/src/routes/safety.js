@@ -48,6 +48,27 @@ router.post('/report', async (req, res) => {
   }
 });
 
+// GET /api/safety/nearby — protected
+router.get('/nearby', protect, async (req, res) => {
+  try {
+    const { lng, lat } = req.query;
+    if (!lng || !lat) return res.status(400).json({ message: 'Coordinates required' });
+
+    const reports = await RiskReport.find({
+      location: {
+        $near: {
+          $geometry: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
+          $maxDistance: 5000,
+        },
+      },
+    }).limit(5);
+
+    res.json(reports);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // GET /api/safety/heatmap — public
 router.get('/heatmap', async (req, res) => {
   try {

@@ -1,185 +1,260 @@
 import { useState, useEffect } from "react";
-import axiosInstance from "../api/axios";
+import api from "../api/axios";
+const CATEGORIES = [
+  { value: "theft",       label: "Theft",        icon: "local_police" },
+  { value: "harassment",  label: "Harassment",   icon: "report"       },
+  { value: "accident",    label: "Accident",     icon: "car_crash"    },
+  { value: "road hazard", label: "Road Hazard",  icon: "warning"      },
+  { value: "other",       label: "Other",        icon: "info"         },
+];
 
-const CATEGORIES = ["theft", "harassment", "accident", "road hazard", "other"];
+const Icon = ({ name, style = {} }) => (
+  <span
+    className="material-symbols-outlined"
+    style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20", lineHeight: 1, ...style }}
+  >
+    {name}
+  </span>
+);
 
 export default function RiskReportForm() {
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("theft");
-  const [coords, setCoords] = useState(null); // { lat, lng }
-  const [locationStatus, setLocationStatus] = useState("Detecting location…");
-  const [status, setStatus] = useState(null); // { type: "success"|"error", message }
-  const [submitting, setSubmitting] = useState(false);
+  const [description,     setDescription]     = useState("");
+  const [category,        setCategory]        = useState("theft");
+  const [coords,          setCoords]          = useState(null);
+  const [locationStatus,  setLocationStatus]  = useState("Detecting location…");
+  const [status,          setStatus]          = useState(null);
+  const [submitting,      setSubmitting]      = useState(false);
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationStatus("Location unavailable");
-      return;
-    }
+    if (!navigator.geolocation) { setLocationStatus("Location unavailable"); return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setLocationStatus("Location detected");
       },
-      () => {
-        setLocationStatus("Location unavailable");
-      }
+      () => setLocationStatus("Location unavailable")
     );
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!description.trim()) return;
-
-    setSubmitting(true);
-    setStatus(null);
-
-    const payload = {
-      description: description.trim(),
-      category,
-      location: coords
-        ? { coordinates: [coords.lng, coords.lat] }
-        : { coordinates: [0, 0] },
-    };
-
+    setSubmitting(true); setStatus(null);
     try {
-      // Public route — no auth needed. Using the axios instance is fine;
-      // it will attach the token if present but the backend doesn't require it.
-      await axiosInstance.post("/safety/report", payload);
-      setStatus({ type: "success", message: "Report submitted anonymously" });
-      setDescription("");
-      setCategory("theft");
+      await api.post("/safety/report", {
+        description: description.trim(),
+        category,
+        location: { coordinates: coords ? [coords.lng, coords.lat] : [0, 0] },
+      });
+      setStatus({ type: "success", message: "Report submitted anonymously. Thank you for keeping the community safe." });
+      setDescription(""); setCategory("theft");
     } catch (err) {
-      const msg =
-        err?.response?.data?.message || "Failed to submit report. Try again.";
-      setStatus({ type: "error", message: msg });
+      setStatus({ type: "error", message: err?.response?.data?.message || "Failed to submit. Please try again." });
     } finally {
       setSubmitting(false);
     }
   };
 
-  /* ── styles ── */
-  const card = {
-    background: "var(--card-bg, #1e2130)",
-    borderRadius: 12,
-    padding: "24px",
-    color: "var(--text-primary, #e2e8f0)",
-  };
-  const label = {
-    display: "block",
-    fontSize: 13,
-    fontWeight: 600,
-    marginBottom: 6,
-    color: "var(--text-secondary, #94a3b8)",
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-  };
-  const inputBase = {
-    width: "100%",
-    background: "var(--input-bg, #0f1117)",
-    border: "1px solid var(--border, #2d3748)",
-    borderRadius: 8,
-    padding: "10px 14px",
-    color: "var(--text-primary, #e2e8f0)",
-    fontSize: 14,
-    outline: "none",
-    boxSizing: "border-box",
-    transition: "border-color 0.2s",
-  };
-  const locationBadge = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    background: coords ? "rgba(34,197,94,0.12)" : "rgba(148,163,184,0.1)",
-    border: `1px solid ${coords ? "rgba(34,197,94,0.35)" : "rgba(148,163,184,0.2)"}`,
-    borderRadius: 20,
-    padding: "5px 12px",
-    fontSize: 13,
-    color: coords ? "#4ade80" : "#94a3b8",
-  };
-  const submitBtn = {
-    marginTop: 8,
-    padding: "11px 28px",
-    background: submitting ? "#6b2e2e" : "linear-gradient(135deg,#ef4444,#f97316)",
-    border: "none",
-    borderRadius: 8,
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: 14,
-    cursor: submitting ? "not-allowed" : "pointer",
-    opacity: submitting ? 0.7 : 1,
-    transition: "opacity 0.2s",
-  };
-  const alertBox = (type) => ({
-    padding: "12px 16px",
-    borderRadius: 8,
-    fontSize: 14,
-    fontWeight: 500,
-    background:
-      type === "success" ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-    border: `1px solid ${type === "success" ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
-    color: type === "success" ? "#4ade80" : "#f87171",
-  });
+  const selectedCat = CATEGORIES.find((c) => c.value === category);
 
   return (
-    <div style={card}>
-      <h3 style={{ margin: "0 0 20px", fontSize: 17, fontWeight: 700 }}>
-        🚨 Report a Risk Anonymously
-      </h3>
+    <div style={{
+      background: "var(--db-surface)",
+      border: "1px solid var(--db-border)",
+      borderRadius: 16,
+      overflow: "hidden",
+      boxShadow: "var(--db-shadow)",
+    }}>
 
-      {status && (
-        <div style={{ ...alertBox(status.type), marginBottom: 18 }}>
-          {status.type === "success" ? "✅" : "❌"} {status.message}
+      {/* ── Header ── */}
+      <div style={{
+        padding: "18px 24px",
+        borderBottom: "1px solid var(--db-border)",
+        display: "flex", alignItems: "center", gap: 10,
+        background: "rgba(42,108,44,0.04)",
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: "rgba(168,56,54,0.1)",
+          border: "1px solid rgba(168,56,54,0.2)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0,
+        }}>
+          <Icon name="report" style={{ fontSize: 18, color: "var(--db-red)" }} />
         </div>
-      )}
+        <div>
+          <div style={{ fontFamily: "var(--db-font-head)", fontWeight: 700, fontSize: 15, color: "var(--db-text)" }}>
+            Report a Risk Anonymously
+          </div>
+          <div style={{ fontSize: 12, color: "var(--db-muted)", marginTop: 1 }}>
+            Your identity is never shared with this report
+          </div>
+        </div>
+      </div>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {/* ── Form body ── */}
+      <form onSubmit={handleSubmit} style={{ padding: "22px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+        {/* Status message */}
+        {status && (
+          <div style={{
+            padding: "12px 16px",
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 500,
+            display: "flex", alignItems: "flex-start", gap: 8,
+            background: status.type === "success" ? "rgba(42,108,44,0.08)" : "rgba(168,56,54,0.08)",
+            border: `1px solid ${status.type === "success" ? "rgba(42,108,44,0.2)" : "rgba(168,56,54,0.2)"}`,
+            color: status.type === "success" ? "var(--db-primary)" : "var(--db-red)",
+          }}>
+            <Icon
+              name={status.type === "success" ? "check_circle" : "error"}
+              style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}
+            />
+            {status.message}
+          </div>
+        )}
+
         {/* Description */}
         <div>
-          <label style={label}>Description *</label>
+          <label style={{
+            display: "block", fontSize: 10.5, fontWeight: 700,
+            textTransform: "uppercase", letterSpacing: "0.12em",
+            color: "var(--db-muted)", marginBottom: 8,
+            fontFamily: "var(--db-font-head)",
+          }}>
+            Description <span style={{ color: "var(--db-red)" }}>*</span>
+          </label>
           <textarea
             rows={4}
             required
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe the safety concern…"
-            style={{ ...inputBase, resize: "vertical", minHeight: 90 }}
+            placeholder="Describe the safety concern in detail…"
+            style={{
+              width: "100%", boxSizing: "border-box",
+              background: "var(--db-bg)",
+              border: "1.5px solid var(--db-border)",
+              borderRadius: 10, padding: "12px 14px",
+              color: "var(--db-text)", fontSize: 13,
+              fontFamily: "var(--db-font-body)",
+              resize: "vertical", minHeight: 96, outline: "none",
+              transition: "border-color 0.18s ease, box-shadow 0.18s ease",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "rgba(42,108,44,0.5)";
+              e.target.style.boxShadow   = "0 0 0 3px rgba(42,108,44,0.08)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "var(--db-border)";
+              e.target.style.boxShadow   = "none";
+            }}
           />
+          <div style={{ fontSize: 11, color: "var(--db-muted)", marginTop: 5, textAlign: "right" }}>
+            {description.length} / 500
+          </div>
         </div>
 
         {/* Category */}
         <div>
-          <label style={label}>Category</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            style={inputBase}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c.charAt(0).toUpperCase() + c.slice(1)}
-              </option>
-            ))}
-          </select>
+          <label style={{
+            display: "block", fontSize: 10.5, fontWeight: 700,
+            textTransform: "uppercase", letterSpacing: "0.12em",
+            color: "var(--db-muted)", marginBottom: 8,
+            fontFamily: "var(--db-font-head)",
+          }}>
+            Category
+          </label>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {CATEGORIES.map((c) => {
+              const active = category === c.value;
+              return (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => setCategory(c.value)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "7px 14px", borderRadius: 20,
+                    border: active
+                      ? "1.5px solid rgba(42,108,44,0.5)"
+                      : "1.5px solid var(--db-border)",
+                    background: active ? "rgba(42,108,44,0.1)" : "var(--db-bg)",
+                    color: active ? "var(--db-primary)" : "var(--db-muted)",
+                    fontSize: 12, fontWeight: 600,
+                    cursor: "pointer",
+                    fontFamily: "var(--db-font-head)",
+                    transition: "all 0.15s ease",
+                    textTransform: "capitalize",
+                  }}
+                >
+                  <Icon name={c.icon} style={{ fontSize: 14, color: active ? "var(--db-primary)" : "var(--db-muted)" }} />
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Location */}
         <div>
-          <label style={label}>Location</label>
-          <span style={locationBadge}>
-            <span>{coords ? "📍" : "📵"}</span>
+          <label style={{
+            display: "block", fontSize: 10.5, fontWeight: 700,
+            textTransform: "uppercase", letterSpacing: "0.12em",
+            color: "var(--db-muted)", marginBottom: 8,
+            fontFamily: "var(--db-font-head)",
+          }}>
+            Location
+          </label>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 7,
+            background: coords ? "rgba(42,108,44,0.07)" : "rgba(148,163,184,0.07)",
+            border: `1px solid ${coords ? "rgba(42,108,44,0.25)" : "var(--db-border)"}`,
+            borderRadius: 20, padding: "7px 14px",
+            fontSize: 13, fontWeight: 500,
+            color: coords ? "var(--db-primary)" : "var(--db-muted)",
+          }}>
+            <Icon
+              name={coords ? "location_on" : "location_off"}
+              style={{ fontSize: 15, color: coords ? "var(--db-primary)" : "var(--db-muted)" }}
+            />
             {locationStatus}
             {coords && (
-              <span style={{ fontSize: 11, opacity: 0.7 }}>
+              <span style={{ fontSize: 11, opacity: 0.65, fontFamily: "monospace" }}>
                 ({coords.lat.toFixed(4)}, {coords.lng.toFixed(4)})
               </span>
             )}
-          </span>
+          </div>
+          {!coords && (
+            <p style={{ fontSize: 11, color: "var(--db-muted)", marginTop: 6 }}>
+              Enable location for a more accurate report. It won't be shown publicly.
+            </p>
+          )}
         </div>
 
-        <button type="submit" disabled={submitting} style={submitBtn}>
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={submitting || !description.trim()}
+          style={{
+            padding: "13px 28px",
+            borderRadius: 10, border: "none",
+            background: submitting || !description.trim()
+              ? "var(--db-border)"
+              : "var(--db-red)",
+            color: submitting || !description.trim() ? "var(--db-muted)" : "#fff",
+            fontWeight: 700, fontSize: 13,
+            fontFamily: "var(--db-font-head)",
+            cursor: submitting || !description.trim() ? "not-allowed" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            transition: "all 0.18s ease",
+            letterSpacing: "0.02em",
+          }}
+        >
+          <Icon name={submitting ? "hourglass_top" : "send"} style={{ fontSize: 15, color: "inherit" }} />
           {submitting ? "Submitting…" : "Submit Report"}
         </button>
+
       </form>
     </div>
   );

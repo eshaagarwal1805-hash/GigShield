@@ -155,7 +155,7 @@ function PostGigForm({ onPosted }) {
 
     setLoading(true);
     try {
-      await api.post("/jobs", form, {
+      await api.post("/employer/jobs", form, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("employer_token")}`,
         },
@@ -319,8 +319,7 @@ export default function EmployerDashboard() {
     setLoading(true);
     setError("");
     try {
-      const res = await api.get("/jobs/mine", authHeader);
-      setJobs(res.data);
+        const res = await api.get("/employer/jobs/mine", authHeader);      setJobs(res.data);
     } catch (err) {
       if (err.response?.status === 401) {
         navigate("/employer/login");
@@ -342,8 +341,7 @@ export default function EmployerDashboard() {
   const handleDelete = async (id) => {
     if (!window.confirm("Remove this listing?")) return;
     try {
-      await api.delete(`/jobs/${id}`, authHeader);
-      setJobs((prev) => prev.filter((j) => j._id !== id));
+        await api.delete(`/employer/jobs/${id}`, authHeader);      setJobs((prev) => prev.filter((j) => j._id !== id));
     } catch {
       alert("Failed to delete listing.");
     }

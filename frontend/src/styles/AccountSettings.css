@@ -1,0 +1,165 @@
+/* ═══════════════════════════════════════════════════════════════
+   AccountSettings.css — GigShield Account Settings
+   Inherits token palette from Dashboard.css (:root vars)
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+
+/* ── Card ── */
+.as-card {
+  background: var(--db-surface);
+  border: 1px solid var(--db-border);
+  border-radius: 16px;
+  padding: 28px 32px;
+  box-shadow: var(--db-shadow);
+  margin-bottom: 20px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.as-card:hover {
+  box-shadow: var(--db-shadow-lg);
+  border-color: rgba(42, 108, 44, 0.18);
+}
+
+/* ── Card header row ── */
+.as-card-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--db-border);
+}
+.as-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: rgba(42, 108, 44, 0.08);
+  border: 1px solid rgba(42, 108, 44, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.as-icon-box .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--db-primary);
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+}
+.as-card-title {
+  font-family: var(--db-font-head, 'Manrope', sans-serif);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--db-text);
+  line-height: 1.2;
+}
+.as-card-subtitle {
+  font-size: 12px;
+  color: var(--db-muted);
+  margin-top: 2px;
+}
+
+/* ── Field label ── */
+.as-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--db-muted);
+  margin-bottom: 8px;
+  font-family: var(--db-font-head, 'Manrope', sans-serif);
+}
+
+/* ── Input ── */
+.as-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: var(--db-font-body, 'DM Sans', sans-serif);
+  border: 1.5px solid var(--db-border);
+  background: var(--db-bg);
+  color: var(--db-text);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  -webkit-appearance: none;
+}
+.as-input::placeholder {
+  color: var(--db-muted);
+  opacity: 0.55;
+}
+.as-input:focus {
+  border-color: rgba(42, 108, 44, 0.5);
+  box-shadow: 0 0 0 3px rgba(42, 108, 44, 0.08);
+  background: var(--db-surface);
+}
+
+/* ── Button ── */
+.as-btn {
+  margin-top: 16px;
+  padding: 11px 26px;
+  border-radius: 10px;
+  border: none;
+  background: var(--db-primary);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: var(--db-font-head, 'Manrope', sans-serif);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  letter-spacing: 0.01em;
+  transition: background 0.18s ease, transform 0.1s ease, box-shadow 0.18s ease;
+  box-shadow: 0 2px 8px rgba(42, 108, 44, 0.25);
+}
+.as-btn:hover {
+  background: var(--db-primary-d, #1d5f21);
+  box-shadow: 0 4px 16px rgba(42, 108, 44, 0.3);
+}
+.as-btn:active {
+  transform: scale(0.97);
+}
+.as-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Feedback message ── */
+.as-msg {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+.as-msg--success {
+  background: rgba(42, 108, 44, 0.09);
+  border: 1px solid rgba(42, 108, 44, 0.2);
+  color: var(--db-primary);
+}
+.as-msg--error {
+  background: rgba(168, 56, 54, 0.08);
+  border: 1px solid rgba(168, 56, 54, 0.2);
+  color: var(--db-red, #a83836);
+}
+
+/* ── Dark mode overrides ── */
+:root[data-theme="dark"] .as-card {
+  background: var(--db-surface);
+  border-color: var(--db-border);
+}
+:root[data-theme="dark"] .as-input {
+  background: var(--db-bg);
+  color: var(--db-text);
+  border-color: var(--db-border);
+}
+:root[data-theme="dark"] .as-input:focus {
+  background: var(--db-surface);
+}
+:root[data-theme="dark"] .as-btn {
+  color: #ffffff;
+}

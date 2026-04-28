@@ -45,6 +45,11 @@ const dashboardSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    lastKnownLocation: {
+      label: { type: String, default: null },
+      coordinates: { type: [Number], default: [0, 0] },
+      updatedAt: { type: Date, default: null },
+    },
   },
   {
     timestamps: true,

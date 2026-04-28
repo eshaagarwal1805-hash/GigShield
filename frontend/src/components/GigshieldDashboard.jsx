@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import RiskReportForm from "./RiskReportForm";
 import HeatmapView from "./HeatmapView";
+import AccountSettingsPage from "../pages/AccountSettingsPage";
 
 // ─────────────────────────────────────────────────────────────
 //  Constants
@@ -16,6 +17,7 @@ const NAV_LINKS = [
   { icon: "history",    label: "Shift History", id: "history" },
   { icon: "group",      label: "Community",     id: "community" },
   { icon: "warning",    label: "Alerts",        id: "alerts" },
+  { icon: "manage_accounts", label: "Account Settings", id: "account" },
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -367,23 +369,51 @@ function CommunityPage() {
 }
 
 function AlertsPage() {
-  const sectionTitle = {
-    fontSize: 16, fontWeight: 700,
-    margin: "0 0 16px",
-    color: "var(--db-text)",
-  };
-  const divider = {
-    border: "none",
-    borderTop: "1px solid var(--db-border)",
-    margin: "32px 0",
-  };
   return (
-    <div style={{ padding: "24px", maxWidth: 780 }}>
-      <h2 style={sectionTitle}>Report a Risk</h2>
-      <RiskReportForm />
-      <hr style={divider} />
-      <h2 style={sectionTitle}>Safety Heatmap</h2>
-      <HeatmapView />
+    <div style={{ maxWidth: 780, display: "flex", flexDirection: "column", gap: 28 }}>
+
+      {/* ── Report a Risk ── */}
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <span style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: 28, height: 28, borderRadius: 8,
+            background: "rgba(168,56,54,0.08)",
+            border: "1px solid rgba(168,56,54,0.18)",
+          }}>
+            <span className="material-symbols-outlined"
+              style={{ fontSize: 15, color: "var(--db-red)", fontVariationSettings: "'FILL' 1" }}>
+              report
+            </span>
+          </span>
+        </div>
+        <RiskReportForm />
+      </div>
+
+      {/* ── Divider ── */}
+      <div style={{ borderTop: "1px solid var(--db-border)" }} />
+
+      {/* ── Safety Heatmap ── */}
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <span style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: 28, height: 28, borderRadius: 8,
+            background: "rgba(42,108,44,0.08)",
+            border: "1px solid rgba(42,108,44,0.18)",
+          }}>
+            <span className="material-symbols-outlined"
+              style={{ fontSize: 15, color: "var(--db-primary)", fontVariationSettings: "'FILL' 1" }}>
+              map
+            </span>
+          </span>
+          <span style={{ fontFamily: "var(--db-font-head)", fontWeight: 700, fontSize: 16, color: "var(--db-text)" }}>
+            Safety Heatmap
+          </span>
+        </div>
+        <HeatmapView />
+      </div>
+
     </div>
   );
 }
@@ -406,11 +436,34 @@ export default function GigShieldDashboard() {
   const [faqInput,        setFaqInput]        = useState("");
   const [profileOpen,     setProfileOpen]     = useState(false);
   const [accountOpen,     setAccountOpen]     = useState(false);
-  const [theme,           setTheme]           = useState(() => localStorage.getItem("gs_theme") || "light");
-  const [language,        setLanguage]        = useState(() => localStorage.getItem("gs_lang") || "en");
-  const [faqItems,        setFaqItems]        = useState([
-    { id: 1, question: "How does GigShield track my shifts?", answer: "Shifts are tracked using GPS check-ins and app activity logs." },
-  ]);
+const [theme, setTheme] = useState(() =>
+  localStorage.getItem("gs_theme") || "light"
+);
+
+/* GLOBAL THEME APPLIER */
+useEffect(() => {
+  localStorage.setItem("gs_theme", theme);
+
+  // Apply to entire app (THIS is what makes everything switch)
+  document.documentElement.setAttribute("data-theme", theme);
+
+  // optional fallback for legacy css
+  document.body.classList.remove("light", "dark");
+  document.body.classList.add(theme);
+}, [theme]);  const [language,        setLanguage]        = useState(() => localStorage.getItem("gs_lang") || "en");
+  const [faqItems, setFaqItems] = useState([]);
+
+useEffect(() => {
+  const fetchFaqs = async () => {
+    try {
+      const res = await api.get("/faq");
+      setFaqItems(res.data);
+    } catch (err) {
+      console.error("FAQ fetch failed", err);
+    }
+  };
+  fetchFaqs();
+}, []);
   const [notifications,   setNotifications]   = useState([]);
   const [shiftStart, setShiftStart] = useState(() => {
   const saved = localStorage.getItem("shiftStart");
@@ -423,8 +476,13 @@ export default function GigShieldDashboard() {
   const [alerts,      setAlerts]      = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [apiError,    setApiError]    = useState("");
+  const [safetyScore,    setSafetyScore]    = useState(7.5);
+  const [nearbyReports,  setNearbyReports]  = useState([]);
+  const [todayEarningsDB, setTodayEarningsDB] = useState(0);
+  const [userLocation, setUserLocation] = useState("");
   const [gigLoading,  setGigLoading]  = useState(false);
-
+  const [jobs, setJobs] = useState([]);
+  
   // ── Live timer state ───────────────────────────────────────
   const [liveMs,    setLiveMs]    = useState(0);   // ms elapsed since shift start
   const timerRef = useRef(null);
@@ -463,20 +521,14 @@ export default function GigShieldDashboard() {
     setApiError("");
     try {
       const [dashRes, gigsRes] = await Promise.all([
-        api.get("/dashboard"),
-        api.get("/gigs"),
+        api.get("/dashboard"), 
       ]);
-      setUser(dashRes.data);
-      setAlerts(dashRes.data.alerts ?? []);
+      setUser(dashRes.data.user);
+      setAlerts(dashRes.data.dashboard?.alerts ?? []);
       setGigs(gigsRes.data);
-    } catch (err) {
+      } catch (err) {
       if (err.response?.status === 401) {
         navigate("/login");
-      } else {
-        setApiError(
-          err.response?.data?.message ||
-          "Could not connect to backend. Is the server running on port 5000?"
-        );
       }
     } finally {
       setLoadingData(false);
@@ -484,6 +536,100 @@ export default function GigShieldDashboard() {
   }, [navigate]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+  // Fetch jobs separately
+useEffect(() => {
+  api.get("/jobs")
+    .then((res) => setJobs(res.data ?? []))
+    .catch((err) => console.error("Jobs fetch failed:", err));
+}, []);
+
+// Fetch safety/earnings separately
+useEffect(() => {
+  api.get("/dashboard")
+    .then((res) => {
+      setSafetyScore(res.data.safetyScore ?? 7.5);
+      setNearbyReports(res.data.nearbyReports ?? []);
+      setTodayEarningsDB(res.data.todayEarnings ?? 0);
+    })
+    .catch((err) => console.error("Safety fetch failed:", err));
+}, []);
+
+  const saveStatusToBackend = useCallback(async (locationData) => {
+  try {
+    await api.patch("/dashboard/status", {
+      location: locationData,
+    });
+  } catch (err) {
+    console.error("Failed to save status:", err);
+  }
+}, []);
+  useEffect(() => {
+  if (!navigator.geolocation) return;
+  if (userLocation && userLocation !== "Location unavailable") return;
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude } = pos.coords;
+
+      const cached = localStorage.getItem("gs_location");
+      const cachedTime = localStorage.getItem("gs_location_time");
+      const fiveMinutes = 5 * 60 * 1000;
+
+      if (cached && cachedTime && Date.now() - parseInt(cachedTime) < fiveMinutes) {
+        setUserLocation(cached);
+        return;
+      }
+
+      const saveLocation = (locationLabel) => {
+        localStorage.setItem("gs_location", locationLabel);
+        localStorage.setItem("gs_location_time", Date.now().toString());
+        setUserLocation(locationLabel);
+        saveStatusToBackend({ label: locationLabel, coordinates: [longitude, latitude] });
+      };
+
+      fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.city) {
+            const label = data.locality || data.city;
+            const city = data.city;
+            const locationLabel = label && label !== city
+              ? `${label}, ${city.slice(0, 3).toUpperCase()}`
+              : city;
+            saveLocation(locationLabel);
+          } else {
+            throw new Error("No city");
+          }
+        })
+        .catch(() => {
+          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`, {
+            headers: { "Accept-Language": "en" }
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              const addr = data?.address;
+              if (!addr) throw new Error("No address");
+              const label = addr.suburb || addr.neighbourhood || addr.city_district || addr.city || "";
+              const city = addr.city || addr.town || addr.state || "";
+              const locationLabel = label && label !== city
+                ? `${label}, ${city.slice(0, 3).toUpperCase()}`
+                : city || "Unknown";
+              saveLocation(locationLabel);
+            })
+            .catch(() => {
+              const old = localStorage.getItem("gs_location");
+              setUserLocation(old || "Location unavailable");
+            });
+        });
+    },
+    (err) => {
+      console.error("Geolocation error:", err.code, err.message);
+      const cached = localStorage.getItem("gs_location");
+      setUserLocation(cached || "Location unavailable");
+    },
+    { enableHighAccuracy: true }
+  );
+}, [saveStatusToBackend]);
 
   // ── Daily notification reset at midnight ──────────────────
   useEffect(() => {
@@ -516,23 +662,9 @@ export default function GigShieldDashboard() {
 }, [shiftStart]);
 
   // ── Today's worked time (completed gigs today + live) ──────
- const todayWorkedMs = useMemo(() => {
-  if (!shiftStart) return 0;
+ const todayWorkedMs = shiftOn ? liveMs : 0;
 
-  const now = new Date();
-  const start = new Date(shiftStart);
-
-  if (!isSameDay(start, now)) return 0;
-
-  return now - start;
-}, [shiftStart]);
-
-  const todayEarnings = useMemo(() => {
-    const today = new Date().toDateString();
-    return completedGigs
-      .filter((g) => g.endTime && new Date(g.endTime).toDateString() === today)
-      .reduce((s, g) => s + (g.earnings || 0), 0);
-  }, [completedGigs]);
+  const todayEarnings = todayEarningsDB;
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -552,16 +684,11 @@ export default function GigShieldDashboard() {
   const toggleShift = async () => {
   if (gigLoading) return;
   setGigLoading(true);
-
   const now = new Date();
-
   try {
     if (shiftStart) {
-      // SHIFT OFF
+      const workedMs = now - new Date(shiftStart);
       localStorage.removeItem("shiftStart");
-
-      const workedMs = now - shiftStart;
-
       setNotifications((n) => [
         {
           id: Date.now(),
@@ -572,16 +699,21 @@ export default function GigShieldDashboard() {
           read: false,
           timestamp: now.toISOString(),
         },
+        {
+          id: Date.now() + 1,
+          type: "SHIFT_TOTAL",
+          icon: "payments",
+          title: "Today's Earnings",
+          message: `Total earned: ₹${todayEarnings.toFixed(2)}`,
+          read: false,
+          timestamp: now.toISOString(),
+        },
         ...n,
       ]);
-
       setShiftStart(null);
-
     } else {
-      // SHIFT ON
       localStorage.setItem("shiftStart", now.toISOString());
       setShiftStart(now);
-
       setNotifications((n) => [
         {
           id: Date.now(),
@@ -603,12 +735,26 @@ export default function GigShieldDashboard() {
   const markAllNotificationsRead = () =>
     setNotifications((n) => n.map((item) => ({ ...item, read: true })));
 
-  const handleFaqSubmit = (e) => {
-    e.preventDefault();
-    if (!faqInput.trim()) return;
-    setFaqItems((items) => [...items, { id: Date.now(), question: faqInput.trim(), answer: null }]);
+  const handleFaqSubmit = async (e) => {
+  e.preventDefault();
+  if (!faqInput.trim()) return;
+  try {
+    const res = await api.post("/faq", { question: faqInput.trim() });
+    setFaqItems((items) => [res.data, ...items]);
     setFaqInput("");
+  } catch (err) {
+    console.error("FAQ submit failed", err);
+  }
+};
+
+useEffect(() => {
+  const handleClickOutside = () => {
+    setNotifOpen(false);
+    setProfileOpen(false);
   };
+  document.addEventListener("click", handleClickOutside);
+  return () => document.removeEventListener("click", handleClickOutside);
+}, []);
 
   // ── Logout ─────────────────────────────────────────────────
   const handleLogout = () => {
@@ -662,10 +808,17 @@ export default function GigShieldDashboard() {
   };
 
   // ── Display helpers ────────────────────────────────────────
-  const displayName = user?.name || "Worker";
-  const firstName   = displayName.split(" ")[0];
+  const displayName = user?.name?.trim() || "User";
+  const firstName = displayName.split(" ")[0];
   const initials    = displayName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-  const greeting    = new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening";
+  const getGreeting = () => {
+  const h = new Date().getHours(); // automatically uses device's local timezone
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+};
+
+const greeting = getGreeting();
 
   // Live display string for the timer card
   const liveTimerStr = useMemo(() => {
@@ -684,21 +837,9 @@ export default function GigShieldDashboard() {
       return <ShiftHistoryPage completedGigs={completedGigs} loading={loadingData} />;
     if (activeNav === "community") return <CommunityPage />;
     if (activeNav === "alerts")   return <AlertsPage />;
-    if (activeNav === "home") {
+    if (activeNav === "account") return <AccountSettingsPage />;    if (activeNav === "home") {
       return (
         <>
-          {apiError && (
-            <div style={{
-              background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
-              color: "#f87171", borderRadius: 12, padding: "12px 18px",
-              marginBottom: 20, fontSize: 13,
-              display: "flex", justifyContent: "space-between",
-            }}>
-              <span>⚠ {apiError}</span>
-              <button onClick={() => setApiError("")} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer" }}>✕</button>
-            </div>
-          )}
-
           <div className="db-grid">
 
             {/* Current Session */}
@@ -718,15 +859,7 @@ export default function GigShieldDashboard() {
                       <span className="db-meta-label">Active Location</span>
                       <span className="db-meta-value">
                         <Icon name="location_on" style={{ fontSize: 14 }} />
-                        {activeGig?.location || "Koramangala, BLR"}
-                      </span>
-                    </div>
-                    <div className="db-session-meta-divider" />
-                    <div className="db-session-meta-item">
-                      <span className="db-meta-label">Battery Level</span>
-                      <span className="db-meta-value db-meta-value--green">
-                        <Icon name="battery_charging_full" style={{ fontSize: 14 }} />
-                        88%
+                        {userLocation || activeGig?.location || "Fetching…"}
                       </span>
                     </div>
                     <div className="db-session-meta-divider" />
@@ -769,23 +902,36 @@ export default function GigShieldDashboard() {
             </div>
 
             {/* Alert card */}
-            <div className="db-card db-card--alert">
+            <div className={`db-card db-card--alert ${nearbyReports.length === 0 ? "db-card--alert-safe" : ""}`}>
               <div className="db-alert-header">
-                <Icon name="report" fill={1} className="db-alert-icon" />
-                <span className="db-alert-tag">{alerts.length > 0 ? "Live Alert" : "Proximity Alert"}</span>
-              </div>
-              <h4 className="db-alert-title">{alerts[0]?.title || "Unsafe Area Warning"}</h4>
-              <p className="db-alert-body">
-                {alerts[0]?.message ||
-                  "High incident rate reported near HSR Layout Sector 2. Maintain high visibility and avoid dark alleys after 9PM."}
-              </p>
-              <button
-                className={`db-ack-btn ${alertAck ? "db-ack-btn--done" : ""}`}
-                onClick={() => setAlertAck(true)}
-              >
-                {alertAck ? "✓ Acknowledged" : "Acknowledge"}
-              </button>
-            </div>
+                <Icon
+      name={nearbyReports.length === 0 ? "check_circle" : "report"}
+      fill={1}
+      className={nearbyReports.length === 0 ? "db-alert-icon--safe" : "db-alert-icon"}
+    />
+    <span className={nearbyReports.length === 0 ? "db-alert-tag--safe" : "db-alert-tag"}>
+      {nearbyReports.length === 0 ? "AREA CLEAR" : "PROXIMITY ALERT"}
+    </span>
+  </div>
+  <h4 className="db-alert-title">
+    {nearbyReports.length === 0
+      ? "Your Area Looks Safe"
+      : `${nearbyReports[0].category.charAt(0).toUpperCase() + nearbyReports[0].category.slice(1)} Reported Nearby`}
+  </h4>
+  <p className="db-alert-body">
+    {nearbyReports.length === 0
+      ? "No risk reports within 5km of your location right now. Stay alert and safe!"
+      : nearbyReports[0].description}
+  </p>
+  {nearbyReports.length > 0 && (
+    <button
+      className={`db-ack-btn ${alertAck ? "db-ack-btn--done" : ""}`}
+      onClick={() => setAlertAck(true)}
+    >
+      {alertAck ? "✓ Acknowledged" : "Acknowledge"}
+    </button>
+  )}
+</div>
 
             {/* Safety Health */}
             <div className="db-card db-card--score">
@@ -794,7 +940,9 @@ export default function GigShieldDashboard() {
                   <span className="db-card-eyebrow">Safety health</span>
                   <h3 className="db-card-title">Current status</h3>
                 </div>
-                <span className="db-score-tier">STABLE</span>
+                <span className="db-score-tier">
+                  {safetyScore >= 8 ? "SAFE" : safetyScore >= 6 ? "STABLE" : safetyScore >= 4 ? "CAUTION" : "DANGER"}
+                  </span>
               </div>
               <div className="db-score-body">
                 <div className="db-score-ring-wrap">
@@ -803,15 +951,15 @@ export default function GigShieldDashboard() {
                       fill="none" stroke="rgba(42,108,44,0.15)" strokeWidth="3"/>
                     <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       fill="none" stroke="#2a6c2c" strokeWidth="3"
-                      strokeDasharray="75, 100" strokeLinecap="round"/>
+                      strokeDasharray={`${(safetyScore / 10) * 100}, 100`} strokeLinecap="round"/>
                   </svg>
-                  <div className="db-score-num">7.5<span style={{ fontSize: 11, marginLeft: 2 }}>/10</span></div>
-                </div>
+                  <div className="db-score-num">{safetyScore}<span style={{ fontSize: 11, marginLeft: 2 }}>/10</span></div>                </div>
                 <div className="db-score-info">
                   <p className="db-score-label">Overall environment</p>
                   <p className="db-score-sub">
-                    Conditions in your usual working areas are generally safe right now, with a few pockets marked for caution during late evening hours.
-                  </p>
+                    {nearbyReports.length === 0
+                    ? "No risk reports near your location. Conditions look safe right now."
+                    : `${nearbyReports.length} risk report${nearbyReports.length > 1 ? "s" : ""} found within 5km of your location. Stay alert.`}                  </p>
                   <div className="db-score-badges">
                     <span className="db-score-badge">Most routes marked low‑risk</span>
                     <span className="db-score-badge">Isolated caution zones in HSR & BTM</span>
@@ -877,33 +1025,50 @@ export default function GigShieldDashboard() {
               </div>
             </div>
 
-            {/* Expert Advice */}
-            <div className="db-card db-card--advice">
-              <div className="db-card-header">
-                <h3 className="db-card-title">Expert Advice</h3>
-                <a href="#" className="db-link">See all →</a>
-              </div>
-              <div className="db-advice-list">
-                {[
-                  { badge: "LEGAL",    badgeClass: "db-badge--blue",  icon: "gavel",                 title: "Understanding your rights during night shifts",   meta: "3 min read" },
-                  { badge: "WELLNESS", badgeClass: "db-badge--green", icon: "self_improvement",       title: "5-minute posture reset for long delivery routes", meta: "2 min read" },
-                  { badge: "FINANCE",  badgeClass: "db-badge--amber", icon: "account_balance_wallet", title: "How to dispute underpayment with evidence",       meta: "4 min read" },
-                ].map(({ badge, badgeClass, icon, title, meta }) => (
-                  <div key={badge} className="db-advice-item">
-                    <div className="db-advice-icon-wrap">
-                      <Icon name={icon} fill={1} style={{ fontSize: 20, color: "#2a6c2c" }} />
-                    </div>
-                    <div className="db-advice-body">
-                      <span className={`db-badge ${badgeClass}`}>{badge}</span>
-                      <p className="db-advice-title">{title}</p>
-                      <span className="db-advice-meta">{meta}</span>
-                    </div>
-                    <Icon name="chevron_right" className="db-advice-arrow" />
-                  </div>
-                ))}
-              </div>
-              <button className="db-explore-btn">Explore Knowledge Hub</button>
+            {/* Open Jobs */}
+<div className="db-card db-card--advice">
+  <div className="db-card-header">
+    <h3 className="db-card-title">Open Gig Jobs</h3>
+    <span className="db-card-eyebrow" style={{ color: "var(--db-primary)" }}>
+      {jobs.length} available
+    </span>
+  </div>
+
+  {jobs.length === 0 ? (
+    <div style={{ textAlign: "center", padding: "24px 0", color: "var(--db-muted)" }}>
+      <Icon name="work_off" style={{ fontSize: 32, marginBottom: 8, display: "block" }} />
+      <p style={{ fontSize: 13 }}>No open jobs right now. Check back later!</p>
+    </div>
+  ) : (
+    <div className="db-advice-list">
+      {jobs.slice(0, 4).map((job) => (
+        <div key={job._id} className="db-advice-item">
+          <div className="db-advice-icon-wrap">
+            <Icon name="work" fill={1} style={{ fontSize: 20, color: "#2a6c2c" }} />
+          </div>
+          <div className="db-advice-body">
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <span className="db-badge db-badge--green">{job.platform}</span>
+              <span className="db-badge db-badge--blue">{job.location}</span>
             </div>
+            <p className="db-advice-title">{job.title}</p>
+            <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
+              <span className="db-advice-meta" style={{ color: "var(--db-primary)", fontWeight: 700 }}>
+                ₹{job.pay}/day
+              </span>
+              <span className="db-advice-meta">{job.description.slice(0, 60)}...</span>
+            </div>
+          </div>
+          <Icon name="chevron_right" className="db-advice-arrow" />
+        </div>
+      ))}
+    </div>
+  )}
+
+  <button className="db-explore-btn" onClick={() => setActiveNav("community")}>
+    View All Jobs →
+  </button>
+</div>
 
           </div>
         </>
@@ -974,10 +1139,10 @@ export default function GigShieldDashboard() {
 
         <div className="db-topnav-right">
           {/* Notifications */}
-          <div className="db-notif-wrapper">
+          <div className="db-notif-wrapper" onClick={(e) => e.stopPropagation()}>
             <button
               className="db-icon-btn db-icon-btn--notif"
-              onClick={() => { setNotifOpen((o) => !o); if (!notifOpen) markAllNotificationsRead(); }}
+              onClick={() => { setNotifOpen((o) => !o); setProfileOpen(false); setFaqOpen(false); if (!notifOpen) markAllNotificationsRead(); }}
             >
               <Icon name="notifications" />
               {unreadCount > 0 && <span className="db-notif-dot">{unreadCount > 9 ? "9+" : unreadCount}</span>}
@@ -1020,13 +1185,13 @@ export default function GigShieldDashboard() {
             )}
           </div>
 
-          <button className="db-icon-btn" onClick={() => setFaqOpen(true)} title="FAQ / Ask a question">
+          <button className="db-icon-btn" onClick={() => { setFaqOpen(true); setNotifOpen(false); setProfileOpen(false); }} title="FAQ / Ask a question">
             <Icon name="help_outline" />
           </button>
 
           {/* Profile dropdown — simplified */}
-          <div className="db-profile-wrapper">
-            <button className="db-avatar" onClick={() => setProfileOpen((o) => !o)}>
+          <div className="db-profile-wrapper" onClick={(e) => e.stopPropagation()}>
+            <button className="db-avatar" onClick={() => { setProfileOpen((o) => !o); setNotifOpen(false); setFaqOpen(false); }}>
               {initials}
             </button>
             {profileOpen && (
@@ -1035,14 +1200,6 @@ export default function GigShieldDashboard() {
                   <div className="db-profile-name">{displayName}</div>
                   <div className="db-profile-email">{user?.email || ""}</div>
                 </div>
-
-                {/* Account Settings */}
-                <button
-                  className="db-profile-item"
-                  onClick={() => { navigate("/account"); setProfileOpen(false);}}
-                >
-                  <Icon name="manage_accounts" /><span>Account Settings</span>
-                </button>
 
                 {/* Dark / Light mode */}
                 <button
@@ -1087,8 +1244,8 @@ export default function GigShieldDashboard() {
             <div className="db-sidebar-name">{displayName}</div>
             <div className="db-sidebar-tier">
               <span className="db-tier-dot" />
-              {user?.job || "Professional Shield"}
-            </div>
+              {user?.workerType || "Gig Worker"}
+              </div>
           </div>
         </div>
         <nav className="db-nav">
@@ -1115,19 +1272,18 @@ export default function GigShieldDashboard() {
       <main className="db-main">
         <div className="db-page-header">
           <div className="db-page-header-text">
-            <span className="db-page-eyebrow">Member Dashboard</span>
             <h1 className="db-page-title">
               {activeNav === "home"
-                ? `Good ${greeting}, ${firstName}.`
+                ? `${greeting}, ${firstName}.`
                 : NAV_LINKS.find((n) => n.id === activeNav)?.label}
             </h1>
             <p className="db-page-sub">
-              {activeNav === "home"
-                ? shiftOn
-                  ? `Shift active — ${msToHHMM(liveMs)} and counting. GigShield is monitoring.`
-                  : "No active shift. Click SHIFT OFF to start monitoring."
-                : "View and manage your work with GigShield."}
-            </p>
+  {activeNav === "home"
+    ? shiftOn
+      ? `Shift active — ${msToHHMM(liveMs)} and counting. GigShield is monitoring.`
+      : "No active shift. Click SHIFT OFF to start monitoring."
+    : ""}
+</p>
           </div>
 
           {/* Shift Toggle */}
@@ -1146,37 +1302,67 @@ export default function GigShieldDashboard() {
 
       {/* FAQ Drawer */}
       {faqOpen && (
-        <div className="db-faq-overlay" onClick={() => setFaqOpen(false)}>
-          <div className="db-faq-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="db-faq-header">
-              <h3>FAQ & Support</h3>
-              <button className="db-faq-close" onClick={() => setFaqOpen(false)}>
-                <Icon name="close" />
-              </button>
-            </div>
-            <div className="db-faq-list">
-              {faqItems.map((item) => (
-                <div key={item.id} className="db-faq-item">
-                  <div className="db-faq-q">Q: {item.question}</div>
-                  <div className="db-faq-a">{item.answer ? `A: ${item.answer}` : "A: Waiting for admin reply…"}</div>
-                </div>
-              ))}
-            </div>
-            <form className="db-faq-form" onSubmit={handleFaqSubmit}>
-              <label className="db-faq-label">
-                Ask a question
-                <textarea
-                  value={faqInput}
-                  onChange={(e) => setFaqInput(e.target.value)}
-                  placeholder="Type your question about shifts, safety, or payments…"
-                />
-              </label>
-              <button type="submit" className="db-faq-submit">Send to Admin</button>
-            </form>
-            <p className="db-faq-note">Admins will review your question and respond here in the FAQ list.</p>
-          </div>
+  <div className="db-faq-overlay" onClick={() => setFaqOpen(false)}>
+    <div className="db-faq-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="db-faq-header">
+        <div>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Support & FAQ</h3>
+          <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--db-muted)" }}>
+            Questions are reviewed by our admin team
+          </p>
         </div>
-      )}
+        <button className="db-faq-close" onClick={() => setFaqOpen(false)}>
+          <Icon name="close" />
+        </button>
+      </div>
+
+      <form className="db-faq-form" onSubmit={handleFaqSubmit}>
+        <label className="db-faq-label">
+          Ask a question
+          <textarea
+            value={faqInput}
+            onChange={(e) => setFaqInput(e.target.value)}
+            placeholder="Type your question about shifts, safety, or payments…"
+            rows={3}
+          />
+        </label>
+        <button type="submit" className="db-faq-submit">
+          <Icon name="send" style={{ fontSize: 15 }} /> Submit Question
+        </button>
+      </form>
+
+      <div style={{ padding: "0 16px 8px", fontSize: 11, fontWeight: 600, color: "var(--db-muted)", textTransform: "uppercase", letterSpacing: 1 }}>
+        Your Questions ({faqItems.length})
+      </div>
+
+      <div className="db-faq-list">
+        {faqItems.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--db-muted)" }}>
+            <Icon name="help_outline" style={{ fontSize: 32, marginBottom: 8, display: "block" }} />
+            <p style={{ fontSize: 13 }}>No questions yet. Ask something above!</p>
+          </div>
+        ) : faqItems.map((item) => (
+          <div key={item._id || item.id} className="db-faq-item">
+            <div className="db-faq-q">
+              <Icon name="help" style={{ fontSize: 14, color: "#2a6c2c", marginRight: 6 }} />
+              {item.question}
+            </div>
+            <div className="db-faq-a" style={{
+              color: item.answer ? "var(--db-text)" : "var(--db-muted)",
+              fontStyle: item.answer ? "normal" : "italic"
+            }}>
+              <Icon name={item.answer ? "check_circle" : "pending"} style={{ fontSize: 13, marginRight: 5 }} />
+              {item.answer || "Awaiting admin response…"}
+            </div>
+            <div style={{ fontSize: 10, color: "var(--db-muted)", marginTop: 4 }}>
+              {fmtDate(item.createdAt)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

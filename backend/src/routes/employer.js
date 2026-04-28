@@ -142,5 +142,24 @@ router.get('/open-jobs', async (req, res) => {
     return res.status(500).json({ message: 'Server error while fetching open jobs.' });
   }
 });
+// GET /api/employer/jobs/mine — employer's own jobs
+router.get('/jobs/mine', protect, async (req, res) => {
+  try {
+    const jobs = await JobPosting.find({ employerId: req.user.id }).sort({ postedAt: -1 });
+    return res.status(200).json(jobs);
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error while fetching jobs.' });
+  }
+});
+
+// DELETE /api/employer/jobs/:id
+router.delete('/jobs/:id', protect, async (req, res) => {
+  try {
+    await JobPosting.findByIdAndDelete(req.params.id);
+    return res.status(200).json({ message: 'Job deleted' });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error while deleting job.' });
+  }
+});
 
 module.exports = router;

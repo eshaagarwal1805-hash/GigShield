@@ -11,12 +11,15 @@ app.use(express.json());
 
 // ── Core routes ───────────────────────────────────────────────
 app.use('/api/auth',      require('./routes/auth'));
+app.use('/api/user',      require('./routes/account'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/gigs',      require('./routes/gigs'));
 app.use('/api/safety',    require('./routes/safety.js'));   // safety heatmap, SOS, report
+app.use('/api/faq', require('./routes/faq'));
 
 // ── Employer / Jobs routes ─────────────────────────────────────
-app.use('/api/employer',  require('./routes/employer'));    // /api/employer/login, register, jobs
+app.use('/api/employer', require('./routes/employer'));
+app.use('/api/jobs', require('./routes/employer'));
 
 // ── Public jobs alias ──────────────────────────────────────────
 // GET /api/jobs  →  same handler as GET /api/employer/open-jobs
