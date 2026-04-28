@@ -80,7 +80,7 @@ export default function Register() {
       // Save JWT — axios interceptor will attach it to future requests
       localStorage.setItem("token", data.token);
 
-      navigate("/dashboard");
+      navigate("/dashboard/worker");
     } catch (err) {
       const msg =
         err.response?.data?.message ||
@@ -89,7 +89,7 @@ export default function Register() {
       setError(msg);
       // If register succeeded but login failed, still send them to login
       if (err.config?.url?.includes("/auth/login")) {
-        navigate("/login");
+        navigate("/login/worker");
       }
     } finally {
       setLoading(false);

@@ -1,0 +1,528 @@
+/* ═══════════════════════════════════════════════
+   GigShield – EmployerRegister.css
+   Dedicated styles for the Employer Register page
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ── Animations ── */
+@keyframes er-fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes er-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes er-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes er-orb-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(18px, -18px) scale(1.05); }
+}
+
+/* ══════════════════════════════════════
+   ROOT LAYOUT
+   ══════════════════════════════════════ */
+.er-root {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: 'Inter', sans-serif;
+  background: #f0f4f3;
+}
+
+/* ══════════════════════════════════════
+   LEFT PANEL
+   ══════════════════════════════════════ */
+.er-panel--left {
+  position: relative;
+  background: linear-gradient(160deg, #1a4f1c 0%, #2a6c2c 50%, #1d5f21 100%);
+  display: flex;
+  flex-direction: column;
+  padding: 48px 56px;
+  overflow: hidden;
+  min-height: 100vh;
+  justify-content: flex-start;
+}
+
+/* Background decorations */
+.er-panel-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.er-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(172, 244, 164, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(172, 244, 164, 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.er-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.3;
+}
+.er-orb-1 {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, #acf4a4, transparent 70%);
+  top: -100px;
+  right: -80px;
+  animation: er-orb-drift 12s ease-in-out infinite alternate;
+}
+.er-orb-2 {
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, #004b0f, transparent 70%);
+  bottom: 40px;
+  left: -40px;
+  animation: er-orb-drift 16s ease-in-out infinite alternate-reverse;
+}
+
+/* Panel content layout */
+.er-panel-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Logo ── */
+.er-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-bottom: 48px;
+  width: fit-content;
+}
+.er-logo-img {
+  height: 100px;
+  width: auto;
+  display: block;
+}
+.er-logo-text {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  color: #acf4a4;
+  letter-spacing: -0.02em;
+}
+.er-logo--mobile {
+  display: none;
+}
+
+/* ── Panel body ── */
+.er-panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.er-panel-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #acf4a4;
+  background: rgba(172, 244, 164, 0.12);
+  border: 1px solid rgba(172, 244, 164, 0.25);
+  padding: 5px 14px;
+  border-radius: 9999px;
+  margin-bottom: 24px;
+  width: fit-content;
+}
+
+.er-panel-title {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: clamp(32px, 3.5vw, 48px);
+  line-height: 1.1;
+  color: #eaffe2;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+
+.er-panel-sub {
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(234, 255, 226, 0.65);
+  max-width: 340px;
+  margin-bottom: 40px;
+}
+
+/* ── Stats row ── */
+.er-panel-stats {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(172, 244, 164, 0.15);
+  border-radius: 14px;
+  padding: 20px 0;
+  margin-bottom: 32px;
+}
+.er-panel-stat {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.er-panel-stat-val {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: #acf4a4;
+  letter-spacing: -0.02em;
+}
+.er-panel-stat-lbl {
+  font-size: 11px;
+  color: rgba(234, 255, 226, 0.5);
+  font-weight: 500;
+}
+.er-panel-stat-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(172, 244, 164, 0.15);
+  flex-shrink: 0;
+}
+
+/* ── Perks list ── */
+.er-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.er-perk {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  background: rgba(172, 244, 164, 0.06);
+  border: 1px solid rgba(172, 244, 164, 0.14);
+  border-radius: 10px;
+}
+.er-perk-arrow {
+  font-size: 14px;
+  color: #acf4a4;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.er-perk-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.er-perk-text {
+  font-size: 13.5px;
+  color: rgba(234, 255, 226, 0.78);
+  font-weight: 500;
+}
+
+/* ── Trust row ── */
+.er-panel-trust {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-top: 32px;
+  border-top: 1px solid rgba(172, 244, 164, 0.12);
+}
+.er-panel-trust span {
+  font-size: 12px;
+  color: rgba(172, 244, 164, 0.6);
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════
+   RIGHT PANEL — FORM
+   ══════════════════════════════════════ */
+.er-panel--right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  background: #f0f4f3;
+  min-height: 100vh;
+}
+
+.er-form-wrap {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 44px 40px;
+  box-shadow: 0 20px 60px rgba(45, 52, 51, 0.08);
+  animation: er-fade-up 0.5s ease both;
+}
+
+/* ── Step indicator ── */
+.er-steps {
+  display: flex;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.er-step-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  background: #e8eeec;
+  color: #9baaaa;
+  flex-shrink: 0;
+  transition: background 0.3s, color 0.3s;
+}
+.er-step-dot--active {
+  background: #2a6c2c;
+  color: #acf4a4;
+}
+.er-step-line {
+  flex: 1;
+  height: 2px;
+  background: #e8eeec;
+  transition: background 0.3s;
+}
+.er-step-line--active {
+  background: #2a6c2c;
+}
+
+/* ── Form header ── */
+.er-form-header {
+  margin-bottom: 28px;
+}
+.er-form-title {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  color: #2d3433;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+.er-form-sub {
+  font-size: 14px;
+  color: #596060;
+  margin: 0;
+}
+
+/* ── Error banner ── */
+.er-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(168, 56, 54, 0.07);
+  border: 1px solid rgba(168, 56, 54, 0.25);
+  color: #a83836;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  animation: er-fade-in 0.25s ease;
+}
+.er-error-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Fields ── */
+.er-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.er-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.er-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2d3433;
+}
+
+/* ── Input wrap ── */
+.er-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.er-input-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+  line-height: 1;
+}
+.er-input {
+  width: 100%;
+  padding: 12px 16px 12px 40px;
+  border-radius: 10px;
+  border: 1.5px solid #dde4e3;
+  outline: none;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: #2d3433;
+  background: #f8faf9;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  box-sizing: border-box;
+}
+.er-input:focus {
+  border-color: #2a6c2c;
+  box-shadow: 0 0 0 3px rgba(42, 108, 44, 0.08);
+  background: #fff;
+}
+.er-input::placeholder {
+  color: #acb3b2;
+}
+
+/* ── Eye toggle (show/hide password) ── */
+.er-eye {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  color: #596060;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.er-eye:hover {
+  color: #2a6c2c;
+}
+
+/* ── Submit button ── */
+.er-submit-wrap {
+  margin-top: 24px;
+}
+.er-btn-primary {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2a6c2c 0%, #1d5f21 100%);
+  color: #eaffe2;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.er-btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+}
+.er-btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.er-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.er-btn-arrow {
+  font-size: 16px;
+  transition: transform 0.2s;
+}
+.er-btn-primary:hover:not(:disabled) .er-btn-arrow {
+  transform: translateX(3px);
+}
+
+/* ── Spinner ── */
+.er-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: er-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Footer links ── */
+.er-footer {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.er-footer-line {
+  font-size: 13px;
+  color: #596060;
+  text-align: center;
+  margin: 0;
+}
+.er-footer-link {
+  color: #2a6c2c;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.er-footer-link:hover {
+  color: #1d5f21;
+}
+
+/* ── Legal note ── */
+.er-legal {
+  margin-top: 16px;
+  font-size: 11px;
+  color: #acb3b2;
+  text-align: center;
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════ */
+@media (max-width: 820px) {
+  .er-root {
+    grid-template-columns: 1fr;
+  }
+  .er-panel--left {
+    display: none;
+  }
+  .er-panel--right {
+    min-height: 100vh;
+    padding: 32px 20px;
+    justify-content: flex-start;
+    padding-top: 40px;
+  }
+  .er-form-wrap {
+    padding: 36px 24px;
+  }
+  .er-logo--mobile {
+    display: flex;
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .er-panel--right {
+    padding: 24px 16px;
+  }
+  .er-form-wrap {
+    padding: 28px 20px;
+    border-radius: 16px;
+  }
+  .er-form-title {
+    font-size: 22px;
+  }
+}

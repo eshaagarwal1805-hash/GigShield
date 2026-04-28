@@ -33,7 +33,7 @@ export default function Login() {
       // Save the JWT — your axios interceptor will pick it up automatically
       localStorage.setItem("token", data.token);
 
-      navigate("/dashboard");
+      navigate("/dashboard/worker");
     } catch (err) {
       const msg =
         err.response?.data?.message ||
@@ -157,7 +157,7 @@ export default function Login() {
 
           <button
             className="auth-btn-secondary"
-            onClick={() => navigate("/register")}
+            onClick={() => navigate("/register/worker")}
           >
             Create a free account →
           </button>

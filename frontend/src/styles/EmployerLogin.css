@@ -1,0 +1,525 @@
+/* ═══════════════════════════════════════════════
+   GigShield – EmployerLogin.css
+   Dedicated styles for the Employer Login page
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ── Animations ── */
+@keyframes el-fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes el-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes el-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes el-orb-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(18px, -18px) scale(1.05); }
+}
+
+/* ══════════════════════════════════════
+   ROOT LAYOUT
+   ══════════════════════════════════════ */
+.el-root {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: 'Inter', sans-serif;
+  background: #f0f4f3;
+}
+
+/* ══════════════════════════════════════
+   LEFT PANEL
+   ══════════════════════════════════════ */
+.el-panel--left {
+  position: relative;
+  background: linear-gradient(160deg, #1a4f1c 0%, #2a6c2c 50%, #1d5f21 100%);
+  display: flex;
+  flex-direction: column;
+  padding: 48px 56px;
+  overflow: hidden;
+  min-height: 100vh;
+}
+
+/* Background decorations */
+.el-panel-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.el-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(172, 244, 164, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(172, 244, 164, 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.el-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.3;
+}
+.el-orb-1 {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, #acf4a4, transparent 70%);
+  top: -100px;
+  right: -80px;
+  animation: el-orb-drift 12s ease-in-out infinite alternate;
+}
+.el-orb-2 {
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, #004b0f, transparent 70%);
+  bottom: 40px;
+  left: -40px;
+  animation: el-orb-drift 16s ease-in-out infinite alternate-reverse;
+}
+
+/* Panel content layout */
+.el-panel-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Logo ── */
+.el-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-bottom: 48px;
+  width: fit-content;
+}
+.el-logo-img {
+  height: 100px;
+  width: auto;
+  display: block;
+}
+.el-logo-text {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  color: #acf4a4;
+  letter-spacing: -0.02em;
+}
+.el-logo--mobile {
+  display: none;
+}
+
+/* ── Panel body ── */
+.el-panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.el-panel-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #acf4a4;
+  background: rgba(172, 244, 164, 0.12);
+  border: 1px solid rgba(172, 244, 164, 0.25);
+  padding: 5px 14px;
+  border-radius: 9999px;
+  margin-bottom: 24px;
+  width: fit-content;
+}
+
+.el-panel-title {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: clamp(32px, 3.5vw, 48px);
+  line-height: 1.1;
+  color: #eaffe2;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+
+.el-panel-sub {
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(234, 255, 226, 0.65);
+  max-width: 340px;
+  margin-bottom: 40px;
+}
+
+/* ── Stats row ── */
+.el-panel-stats {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(172, 244, 164, 0.15);
+  border-radius: 14px;
+  padding: 20px 0;
+  margin-bottom: 32px;
+}
+.el-panel-stat {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.el-panel-stat-val {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: #acf4a4;
+  letter-spacing: -0.02em;
+}
+.el-panel-stat-lbl {
+  font-size: 11px;
+  color: rgba(234, 255, 226, 0.5);
+  font-weight: 500;
+}
+.el-panel-stat-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(172, 244, 164, 0.15);
+  flex-shrink: 0;
+}
+
+/* ── Feature list ── */
+.el-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.el-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  background: rgba(172, 244, 164, 0.06);
+  border: 1px solid rgba(172, 244, 164, 0.14);
+  border-radius: 10px;
+}
+.el-feature-arrow {
+  font-size: 14px;
+  color: #acf4a4;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.el-feature-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.el-feature-text {
+  font-size: 13.5px;
+  color: rgba(234, 255, 226, 0.78);
+  font-weight: 500;
+}
+
+/* ── Trust row ── */
+.el-panel-trust {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-top: 32px;
+  border-top: 1px solid rgba(172, 244, 164, 0.12);
+}
+.el-panel-trust span {
+  font-size: 12px;
+  color: rgba(172, 244, 164, 0.6);
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════
+   RIGHT PANEL — FORM
+   ══════════════════════════════════════ */
+.el-panel--right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  background: #f0f4f3;
+  min-height: 100vh;
+}
+
+.el-form-wrap {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 44px 40px;
+  box-shadow: 0 20px 60px rgba(45, 52, 51, 0.08);
+  animation: el-fade-up 0.5s ease both;
+}
+
+/* ── Form header ── */
+.el-form-header {
+  margin-bottom: 28px;
+}
+.el-form-title {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  color: #2d3433;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+.el-form-sub {
+  font-size: 14px;
+  color: #596060;
+  margin: 0;
+}
+
+/* ── Error banner ── */
+.el-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(168, 56, 54, 0.07);
+  border: 1px solid rgba(168, 56, 54, 0.25);
+  color: #a83836;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  animation: el-fade-in 0.25s ease;
+}
+.el-error-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Fields ── */
+.el-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.el-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.el-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.el-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2d3433;
+}
+.el-forgot {
+  font-size: 12px;
+  color: #2a6c2c;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.el-forgot:hover {
+  color: #1d5f21;
+}
+
+/* ── Input wrap ── */
+.el-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.el-input-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+  line-height: 1;
+}
+.el-input {
+  width: 100%;
+  padding: 12px 16px 12px 40px;
+  border-radius: 10px;
+  border: 1.5px solid #dde4e3;
+  outline: none;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: #2d3433;
+  background: #f8faf9;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  box-sizing: border-box;
+}
+.el-input:focus {
+  border-color: #2a6c2c;
+  box-shadow: 0 0 0 3px rgba(42, 108, 44, 0.08);
+  background: #fff;
+}
+.el-input::placeholder {
+  color: #acb3b2;
+}
+
+/* ── Eye toggle ── */
+.el-eye {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  color: #596060;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.el-eye:hover {
+  color: #2a6c2c;
+}
+
+/* ── Submit button ── */
+.el-submit-wrap {
+  margin-top: 24px;
+}
+.el-btn-primary {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2a6c2c 0%, #1d5f21 100%);
+  color: #eaffe2;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.el-btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+}
+.el-btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.el-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.el-btn-arrow {
+  font-size: 16px;
+  transition: transform 0.2s;
+}
+.el-btn-primary:hover:not(:disabled) .el-btn-arrow {
+  transform: translateX(3px);
+}
+
+/* ── Spinner ── */
+.el-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: el-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Divider ── */
+.el-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 0;
+}
+.el-divider-line {
+  flex: 1;
+  height: 1px;
+  background: #dde4e3;
+}
+.el-divider-text {
+  font-size: 12px;
+  color: #9b9d9d;
+  white-space: nowrap;
+}
+
+/* ── Footer links ── */
+.el-footer {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.el-footer-line {
+  font-size: 13px;
+  color: #596060;
+  text-align: center;
+  margin: 0;
+}
+.el-footer-link {
+  color: #2a6c2c;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.el-footer-link:hover {
+  color: #1d5f21;
+}
+
+/* ── Legal note ── */
+.el-legal {
+  margin-top: 16px;
+  font-size: 11px;
+  color: #acb3b2;
+  text-align: center;
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════ */
+@media (max-width: 820px) {
+  .el-root {
+    grid-template-columns: 1fr;
+  }
+  .el-panel--left {
+    display: none;
+  }
+  .el-panel--right {
+    min-height: 100vh;
+    padding: 32px 20px;
+    justify-content: flex-start;
+    padding-top: 40px;
+  }
+  .el-form-wrap {
+    padding: 36px 24px;
+  }
+  .el-logo--mobile {
+    display: flex;
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .el-panel--right {
+    padding: 24px 16px;
+  }
+  .el-form-wrap {
+    padding: 28px 20px;
+    border-radius: 16px;
+  }
+  .el-form-title {
+    font-size: 22px;
+  }
+}

@@ -1,35 +1,126 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Home              from "./pages/Home";
-import Login             from "./pages/Login";
-import Register          from "./pages/Register";
-import Dashboard         from "./pages/Dashboard";
-import EmployerLogin     from "./pages/EmployerLogin";
-import EmployerRegister  from "./pages/EmployerRegister";
-import EmployerDashboard from "./pages/EmployerDashboard";
 import { useEffect } from "react";
 
-// ── Auth guards ───────────────────────────────────────────────
-const PrivateRoute  = ({ children }) =>
-  localStorage.getItem("token")          ? children : <Navigate to="/login"          />;
+import Home from "./pages/Home";
 
-const EmployerRoute = ({ children }) =>
-  localStorage.getItem("employer_token") ? children : <Navigate to="/employer/login" />;
+// Worker
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
 
-// ─────────────────────────────────────────────────────────────
+// Employer
+import EmployerLogin from "./pages/EmployerLogin";
+import EmployerRegister from "./pages/EmployerRegister";
+import EmployerDashboard from "./pages/EmployerDashboard";
+
+// Role selection
+import SelectRole from "./pages/SelectRole";
+import SelectRegisterRole from "./pages/SelectRegisterRole";
+
+
+// ─────────────────────────────────────────────
+// Auth Guards
+// ─────────────────────────────────────────────
+
+// Worker protected
+const PrivateRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  return token ? children : <Navigate to="/login" replace />;
+};
+
+// Employer protected
+const EmployerRoute = ({ children }) => {
+  const token = localStorage.getItem("employer_token");
+  return token ? children : <Navigate to="/login" replace />;
+};
+
+// Prevent logged-in users from seeing auth pages
+const PublicRoute = ({ children }) => {
+  const worker = localStorage.getItem("token");
+  const employer = localStorage.getItem("employer_token");
+
+  if (worker) return <Navigate to="/dashboard" replace />;
+  if (employer) return <Navigate to="/employer/dashboard" replace />;
+
+  return children;
+};
+
+
+// ─────────────────────────────────────────────
+// App
+// ─────────────────────────────────────────────
+
 export default function App() {
   useEffect(() => {
     const savedTheme = localStorage.getItem("gs_theme") || "light";
     document.documentElement.setAttribute("data-theme", savedTheme);
   }, []);
+
   return (
     <Routes>
 
-      {/* ── Public ── */}
-      <Route path="/"          element={<Home />}     />
-      <Route path="/login"     element={<Login />}    />
-      <Route path="/register"  element={<Register />} />
+      {/* ───────── PUBLIC ───────── */}
+      <Route path="/" element={<Home />} />
 
-      {/* ── Worker dashboard (protected) ── */}
+      {/* LOGIN FLOW */}
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <SelectRole />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/login/worker"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/login/employer"
+        element={
+          <PublicRoute>
+            <EmployerLogin />
+          </PublicRoute>
+        }
+      />
+
+      {/* REGISTER FLOW */}
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <SelectRegisterRole />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/register/worker"
+        element={
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/register/employer"
+        element={
+          <PublicRoute>
+            <EmployerRegister />
+          </PublicRoute>
+        }
+      />
+
+      {/* ───────── PROTECTED ───────── */}
+
+      {/* Worker */}
       <Route
         path="/dashboard"
         element={
@@ -38,10 +129,8 @@ export default function App() {
           </PrivateRoute>
         }
       />
-  
-      {/* ── Employer pages ── */}
-      <Route path="/employer/login"    element={<EmployerLogin />}    />
-      <Route path="/employer/register" element={<EmployerRegister />} />
+
+      {/* Employer */}
       <Route
         path="/employer/dashboard"
         element={
@@ -51,7 +140,7 @@ export default function App() {
         }
       />
 
-      {/* ── Catch-all ── */}
+      {/* ───────── FALLBACK ───────── */}
       <Route path="*" element={<Navigate to="/" replace />} />
 
     </Routes>
