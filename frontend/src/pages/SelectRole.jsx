@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import "../styles/Auth.css";
+import gigshieldLogo from "../assets/Gigshield Logo.png";
 
 export default function SelectRole() {
   const navigate = useNavigate();
@@ -9,9 +10,18 @@ export default function SelectRole() {
       {/* Left panel (reuse your existing styling) */}
       <div className="auth-panel auth-panel--left">
         <div className="auth-panel-content">
+          {/* Logo at the top */}
+          <div className="auth-logo" onClick={() => navigate("/")}>
+            <img
+              src={gigshieldLogo}
+              alt="GigShield"
+              className="auth-logo-img"
+            />
+          </div>
+
+          <div className="auth-panel-body"></div>
           <h2 className="auth-panel-title">
-            Your safety<br />never clocks out.
-          </h2>
+            Welcome to<br />GigShield.</h2>
           <p className="auth-panel-sub">
             Choose how you want to continue.
           </p>
@@ -38,7 +48,12 @@ export default function SelectRole() {
             >
               Employer →
             </button>
-
+            <button
+            className="auth-btn-tertiary"
+            onClick={() => navigate("/admin/login")}
+            >
+              🛡 Login as Admin
+              </button>
           </div>
         </div>
       </div>

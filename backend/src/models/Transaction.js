@@ -1,6 +1,3 @@
-// backend/src/models/Transaction.js
-// Phase 2 — financial ledger for every credit / debit event
-
 const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
@@ -34,8 +31,7 @@ const transactionSchema = new mongoose.Schema(
     source: {
       type: String,
       trim: true,
-      default: null,
-      // Platform name: "Swiggy", "Uber", "GigShield Bonus", etc.
+      default: null,  // Platform name: "Swiggy", "Uber", "GigShield Bonus", etc.
     },
     status: {
       type: String,
@@ -44,11 +40,12 @@ const transactionSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // createdAt only needed per schema, but updatedAt is free
+    timestamps: true,  // createdAt only needed per schema, but updatedAt is free
   }
 );
 
 // ── Indexes ───────────────────────────────────────────────────
+
 // Most common query: all transactions for a user, newest first
 transactionSchema.index({ userId: 1, createdAt: -1 });
 

@@ -23,11 +23,11 @@ router.post('/start', protect, async (req, res) => {
         label: req.body.location?.label || '',
       },
     });
-    await Dashboard.findOneAndUpdate(
-      { userId: req.user._id },
-      { activeGigId: gig._id, lastActiveDate: new Date(), $inc: { totalGigs: 1 } },
-      { upsert: true }
-    );
+    await upsertDashboard(req.user._id, {
+  activeGigId: gig._id,
+  lastActiveDate: new Date(),
+  $inc: { totalGigs: 1 },
+  });
     res.status(201).json(gig);
   } catch (err) {
     console.error('Start shift error:', err);
@@ -44,11 +44,10 @@ router.post('/stop', protect, async (req, res) => {
     gig.endTime  = new Date();
     gig.earnings = req.body.earnings || 0;
     await gig.save();
-    await Dashboard.findOneAndUpdate(
-      { userId: req.user._id },
-      { activeGigId: null, $inc: { completedGigs: 1, totalEarnings: gig.earnings } },
-      { upsert: true }
-    );
+    await upsertDashboard(req.user._id, {
+      activeGigId: null,
+      $inc: { completedGigs: 1, totalEarnings: gig.earnings },
+    });
     await Transaction.create({
       userId: req.user._id,
       relatedGigId: gig._id,
@@ -99,11 +98,10 @@ router.patch('/:id/complete', protect, async (req, res) => {
     gig.endTime  = new Date();
     gig.earnings = earnings;
     await gig.save();
-    await Dashboard.findOneAndUpdate(
-      { userId: req.user._id },
-      { activeGigId: null, $inc: { completedGigs: 1, totalEarnings: earnings } },
-      { upsert: true }
-    );
+    await upsertDashboard(req.user._id, {
+      activeGigId: null,
+      $inc: { completedGigs: 1, totalEarnings: earnings },
+    });
     await Transaction.create({
       userId: req.user._id,
       relatedGigId: gig._id,

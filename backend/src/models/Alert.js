@@ -1,6 +1,3 @@
-// backend/src/models/Alert.js
-// Phase 2 — SOS events, safety warnings, and info broadcasts
-
 const mongoose = require("mongoose");
 
 const alertSchema = new mongoose.Schema(
@@ -36,6 +33,10 @@ const alertSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
+    onShift: {
+      type: Boolean,
+      default: false,
+    },
     triggeredAt: {
       type: Date,
       default: Date.now,
@@ -48,16 +49,15 @@ const alertSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-  nearestService: {
-  name:            { type: String, default: '' },
-  address:         { type: String, default: '' },
-  type:            { type: String, default: '' },
-  emergencyNumber: { type: String, default: '112' },
-  lat:             { type: String, default: '' },
-  lng:             { type: String, default: '' },
-},
-
-},
+    nearestService: {
+      name:            { type: String, default: "" },
+      address:         { type: String, default: "" },
+      type:            { type: String, default: "" },
+      emergencyNumber: { type: String, default: "112" },
+      lat:             { type: String, default: "" },
+      lng:             { type: String, default: "" },
+    },
+  },
   {
     timestamps: true,
   }
@@ -68,10 +68,11 @@ alertSchema.pre("save", function (next) {
   if (this.isModified("resolved") && this.resolved && !this.resolvedAt) {
     this.resolvedAt = new Date();
   }
-  next();
+  
 });
 
 // ── Indexes ───────────────────────────────────────────────────
+
 // Primary query: all unresolved alerts for a user
 alertSchema.index({ userId: 1, resolved: 1 });
 

@@ -163,7 +163,6 @@ const updatePassword = async () => {
         </button>
         <Msg raw={passMsg} />
       </div>
-
     </div>
   );
 }

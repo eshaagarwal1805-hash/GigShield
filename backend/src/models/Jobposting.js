@@ -14,17 +14,16 @@ const jobPostingSchema = new mongoose.Schema({
   platform: {
     type: String,
     required: true,
-    trim: true,
-    // e.g. 'Swiggy', 'Dunzo', 'Urban Company'
+    trim: true,       // e.g. 'Swiggy', 'Dunzo', 'Urban Company'
   },
   pay: {
     type: Number,
-    required: true, // in INR
+    required: true,   // in INR
   },
   location: {
     type: String,
     required: true,
-    trim: true, // city/area name, plain text
+    trim: true,      // city/area name, plain text
   },
   description: {
     type: String,

@@ -1,4 +1,10 @@
-import {useState,useMemo,useEffect,useCallback,useRef,} from "react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import "../styles/Dashboard.css";
 import gigshieldLogo from "../assets/Gigshield Logo.png";
 import { useNavigate } from "react-router-dom";
@@ -685,7 +691,7 @@ export default function GigShieldDashboard() {
         </nav>
 
         {/* ── SOS Button (self-contained) ── */}
-        <SOSButton />
+        <SOSButton onShift={shiftOn} />
       </aside>
 
       {/* ── MAIN ── */}

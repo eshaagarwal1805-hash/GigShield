@@ -1,15 +1,18 @@
 import API from './axios';
 
 // SOS
-export const triggerSOS        = (payload)                 => API.post('/safety/sos', payload);
-export const fetchSOSHistory   = ()                        => API.get('/safety/sos/history');
-export const resolveSOS        = (id)                      => API.patch(`/safety/sos/${id}/resolve`);
+
+export const getActiveSOSAlert = () => API.get('/safety/sos/active');
+export const triggerSOS        = (payload) => API.post('/safety/sos', payload);
+export const fetchSOSHistory   = () => API.get('/safety/sos/history');
+export const resolveSOS        = (id) => API.patch(`/safety/sos/${id}/resolve`);
+
 
 // Anonymous report
-export const submitRiskReport  = (payload)                 => API.post('/safety/report', payload);
+export const submitRiskReport  = (payload) => API.post('/safety/report', payload);
 
 // Heatmap
-export const fetchHeatmap      = ()                        => API.get('/safety/heatmap');
+export const fetchHeatmap      = () => API.get('/safety/heatmap');
 
 // Nearby risks
 export const fetchNearbyRisks  = (lng, lat, radius = 5000) =>

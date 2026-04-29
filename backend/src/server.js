@@ -42,9 +42,12 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/gigs',      require('./routes/gigs'));
 app.use('/api/safety',    require('./routes/safety'));
 app.use('/api/faq',       require('./routes/faq'));
+app.use('/api/community', require('./routes/community'));
+app.use('/api/contact',   require('./routes/contact'));
 
 // ── Employer / Jobs Routes ─────────────────────────────────────
 app.use('/api/employer', require('./routes/employer'));
+app.use('/api/admin',    require('./routes/admin')); 
 
 // ── Public Jobs API (Worker Dashboard) ─────────────────────────
 const JobPosting = require('./models/Jobposting');
@@ -62,7 +65,7 @@ app.get('/api/jobs', async (req, res) => {
 });
 
 // ── Phase 2 Features (Enabled) ─────────────────────────────────
-app.use('/api/transactions', require('./routes/transactions')); // ← fixed (was pointing to a Model)
+app.use('/api/transactions', require('./routes/transactions'));
 
 // ── Health Check & Root ────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -74,7 +77,7 @@ app.get('/health', (req, res) => {
 });
 
 // ── 404 Handler ───────────────────────────────────────────────
-app.use((req, res) => {                                        // ← fixed (was `'*'`)
+app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 

@@ -1,14 +1,22 @@
-import { useState } from 'react';
-import { triggerSOS, resolveSOS } from '../api/safety';
+import { useState, useEffect } from 'react';
+import { triggerSOS, resolveSOS, getActiveSOSAlert } from '../api/safety';
 
 /**
  * Drop this anywhere in the worker dashboard.
- * Requires browser geolocation permission.
+ * Props:
+ *   onShift {boolean} — pass the current shift status from parent
  */
-export default function SOSButton() {
+export default function SOSButton({ onShift = false }) {
   const [activeAlert, setActiveAlert] = useState(null);
   const [loading,     setLoading]     = useState(false);
   const [status,      setStatus]      = useState('');
+
+  // On mount: restore active SOS state (survives page refresh)
+  useEffect(() => {
+    getActiveSOSAlert()
+      .then(({ data }) => { if (data) setActiveAlert(data); })
+      .catch(() => {});
+  }, []);
 
   const getCoords = () =>
     new Promise((resolve, reject) =>
@@ -26,11 +34,14 @@ export default function SOSButton() {
       const { data } = await triggerSOS({
         location: { coordinates },
         message: 'Emergency SOS triggered',
+        onShift,
       });
       setActiveAlert(data);
       setStatus('SOS sent. Help is on the way.');
     } catch (err) {
-      setStatus('Failed to send SOS. Check location permissions.');
+      setStatus(
+        err?.response?.data?.message || 'Failed to send SOS. Check location permissions.'
+      );
     } finally {
       setLoading(false);
     }
@@ -53,19 +64,11 @@ export default function SOSButton() {
   return (
     <div className="sos-wrapper">
       {!activeAlert ? (
-        <button
-          className="sos-btn"
-          onClick={handleSOS}
-          disabled={loading}
-        >
+        <button className="sos-btn" onClick={handleSOS} disabled={loading}>
           {loading ? 'Sending…' : '🆘 SOS'}
         </button>
       ) : (
-        <button
-          className="sos-resolve-btn"
-          onClick={handleResolve}
-          disabled={loading}
-        >
+        <button className="sos-resolve-btn" onClick={handleResolve} disabled={loading}>
           {loading ? 'Resolving…' : '✅ Resolve Alert'}
         </button>
       )}

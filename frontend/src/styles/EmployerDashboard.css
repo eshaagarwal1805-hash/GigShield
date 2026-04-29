@@ -3,7 +3,138 @@
    Extends existing Auth.css; only employer-dashboard-specific styles here.
 ───────────────────────────────────────────────────────────────── */
 
-/* ROOT */
+/* ── HEADER ROW ─────────────────────────────────────────────── */
+.emp-header-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.emp-company-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0284c7, #0f172a);
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(2,132,199,0.25);
+}
+
+.emp-page-subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0.1rem 0 0;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* ── STAT ICONS ─────────────────────────────────────────────── */
+.emp-stat-icon {
+  font-size: 1.4rem;
+  margin-bottom: 0.4rem;
+  line-height: 1;
+}
+
+.emp-stat-empty {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+/* ── WARNING ALERT (replaces aggressive red) ───────────────── */
+.emp-alert-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.emp-alert-warning-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.emp-alert-retry-btn {
+  background: none;
+  border: none;
+  color: #0284c7;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.emp-alert-retry-btn:hover {
+  color: #0369a1;
+}
+
+.emp-alert-dismiss-btn {
+  background: none;
+  border: none;
+  color: #92400e;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0 0 0 0.5rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.emp-alert-dismiss-btn:hover {
+  opacity: 1;
+}
+
+/* ── EMPTY STATE ENHANCEMENTS ───────────────────────────────── */
+.emp-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.emp-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.4rem;
+}
+
+.emp-empty-desc {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-bottom: 1.25rem;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
+.emp-empty-cta {
+  font-size: 0.9rem;
+  padding: 0.7rem 1.8rem;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(2,132,199,0.3);
+}
+
+.emp-empty-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(2,132,199,0.35);
+}
+
+
 .emp-root {
   min-height: 100vh;
   background: #f8fafc;
@@ -144,6 +275,9 @@
 .emp-tab--active {
   color: #0284c7;
   border-bottom-color: #0284c7;
+  font-weight: 700;
+  background: rgba(2,132,199,0.06);
+  border-radius: 6px 6px 0 0;
 }
 
 .emp-tab-badge {

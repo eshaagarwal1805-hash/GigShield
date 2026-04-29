@@ -1,5 +1,3 @@
-// backend/src/models/Dashboard.js
-
 const mongoose = require("mongoose");
 
 const dashboardSchema = new mongoose.Schema(
@@ -14,6 +12,7 @@ const dashboardSchema = new mongoose.Schema(
       type: String,
       unique: true,
       // Format: GS-IND-XXXXX  — generated on creation, see pre-save hook below
+      sparse: true,
     },
     totalGigs: {
       type: Number,
@@ -77,6 +76,7 @@ dashboardSchema.pre("save", async function (next) {
 });
 
 // ── Indexes ───────────────────────────────────────────────────
+
 // userId unique index created by unique:true above.
 // uniqueWorkerId unique index created by unique:true above.
 dashboardSchema.index({ lastActiveDate: -1 }); // for sorting by recent activity

@@ -17,9 +17,14 @@ import EmployerDashboard from "./pages/EmployerDashboard";
 import SelectRole from "./pages/SelectRole";
 import SelectRegisterRole from "./pages/SelectRegisterRole";
 
+// Admin
+import AdminLogin from "./pages/AdminLogin";
+import AdminRegister from "./pages/AdminRegister";
+import AdminDashboard from "./pages/AdminDashboard";
+
 
 // ─────────────────────────────────────────────
-// Auth Guards
+// AUTH GUARDS
 // ─────────────────────────────────────────────
 
 // Worker protected
@@ -34,10 +39,31 @@ const EmployerRoute = ({ children }) => {
   return token ? children : <Navigate to="/login" replace />;
 };
 
-// Prevent logged-in users from seeing auth pages
+// ✅ Admin protected (NEW)
+const AdminRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (token && user?.role === "admin") {
+      return children;
+    }
+  } catch {}
+
+  return <Navigate to="/admin/login" replace />;
+};
+
+// ✅ Public route (FIXED)
 const PublicRoute = ({ children }) => {
   const worker = localStorage.getItem("token");
   const employer = localStorage.getItem("employer_token");
+
+  const currentPath = window.location.pathname;
+
+  // ✅ allow admin pages ALWAYS
+  if (currentPath.startsWith("/admin")) {
+    return children;
+  }
 
   if (worker) return <Navigate to="/dashboard" replace />;
   if (employer) return <Navigate to="/employer/dashboard" replace />;
@@ -47,7 +73,7 @@ const PublicRoute = ({ children }) => {
 
 
 // ─────────────────────────────────────────────
-// App
+// APP
 // ─────────────────────────────────────────────
 
 export default function App() {
@@ -137,6 +163,37 @@ export default function App() {
           <EmployerRoute>
             <EmployerDashboard />
           </EmployerRoute>
+        }
+      />
+
+      {/* ───────── ADMIN ───────── */}
+
+      {/* Admin Login (public but bypass restriction) */}
+      <Route
+        path="/admin/login"
+        element={
+          <PublicRoute>
+            <AdminLogin />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/admin/register"
+        element={
+          <PublicRoute>
+            <AdminRegister />
+          </PublicRoute>
+        }
+      />
+
+      {/* Admin Dashboard (protected) */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
         }
       />
 

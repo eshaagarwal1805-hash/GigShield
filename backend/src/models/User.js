@@ -1,5 +1,3 @@
-// backend/src/models/User.js
-
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
@@ -28,13 +26,17 @@ const userSchema = new mongoose.Schema(
     },
     workerType: {
       type: String,
-      required: [true, "Worker type is required"],
+      required: function () {
+        // Required only for workers, not for employer
+        return this.role === "worker";
+      },
       enum: ["Delivery", "Driver", "Freelancer", "Domestic", "Construction", "Other"],
-      set: (v) => v ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : v,
+      set: (v) =>
+        v ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : v,
     },
     role: {
       type: String,
-      enum: ["worker", "admin"],
+      enum: ["worker", "employer"],
       default: "worker",
     },
     isVerified: {
@@ -47,13 +49,11 @@ const userSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // adds createdAt + updatedAt automatically
+    timestamps: true,
   }
 );
 
-// ── Indexes ──────────────────────────────────────────────────
-// email unique index is created by `unique: true` above.
-// Compound index: workerType + role (for filtering workers by type and role)
+// Indexes
 userSchema.index({ workerType: 1, role: 1 });
 
 module.exports = mongoose.model("User", userSchema);

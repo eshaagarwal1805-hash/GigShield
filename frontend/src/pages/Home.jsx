@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Home.css";
 import gigshieldLogo from "../assets/Gigshield Logo.png";
+import api from "../api/axios";
 
 import geoImg      from "../assets/geolocation.jpg";
 import sosImg      from "../assets/emergencysos.jpg";
@@ -60,12 +61,6 @@ const howSteps = [
   },
 ];
 
-const communityPosts = [
-  { initials: "RK", name: "Ravi Kumar",      role: "Delivery Partner · Mumbai", time: "2h ago", body: "Used the SOS feature for the first time last night — response from my union rep was under 3 minutes. Genuinely lifesaving.",              likes: 84  },
-  { initials: "SP", name: "Sunita Patel",    role: "Domestic Worker · Delhi",   time: "5h ago", body: "Finally disputed my unpaid wages using the payout verification tool. Got ₹3,400 back. Never thought I had any power until now.",         likes: 127 },
-  { initials: "MR", name: "Mohammed Rashid", role: "Driver · Pune",             time: "1d ago", body: "The offline mode saved me during a remote delivery — no signal but the shift kept logging. Really thought through for us.",                likes: 61  },
-];
-
 function useInView(threshold = 0.1) {
   const ref = useRef(null);
   const [inView, setInView] = useState(false);
@@ -89,13 +84,24 @@ export default function Home() {
   const [communityRef, communityIn] = useInView(0.05);
   const [contactRef,   contactIn]   = useInView(0.05);
   const [ctaRef,       ctaIn]       = useInView(0.05);
-  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
+  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "", type: "Worker" });  
   const [sent, setSent] = useState(false);
+  const [showUnionModal, setShowUnionModal] = useState(false);
 
   // Carousel state
   const [carouselPage, setCarouselPage] = useState(0);
   const [carouselAnimating, setCarouselAnimating] = useState(false);
   const [carouselDirection, setCarouselDirection] = useState("next"); // "next" | "prev"
+
+  // Community state
+  const [communityPosts,    setCommunityPosts]   = useState([]);
+  const [communityPage,     setCommunityPage]     = useState(1);
+  const [communityTotal,    setCommunityTotal]    = useState(0);
+  const [communityLoading,  setCommunityLoading]  = useState(false);
+  const [postForm,          setPostForm]          = useState({ body: "", tag: "General", isAnonymous: false });
+  const [postError,         setPostError]         = useState("");
+  const [postSuccess,       setPostSuccess]       = useState("");
+  const [postOpen,          setPostOpen]          = useState(false);
 
   const isLoggedIn    = !!localStorage.getItem("token");
   const handleAuthNav = () => navigate(isLoggedIn ? "/dashboard" : "/login");
@@ -106,9 +112,66 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleContact = () => {
-    if (contactForm.name && contactForm.email && contactForm.message) setSent(true);
-  };
+  const handleContact = async () => {
+  if (!contactForm.name || !contactForm.email || !contactForm.message) return;
+  try {
+    await api.post("/contact", {
+      name:    contactForm.name,
+      email:   contactForm.email,
+      message: contactForm.message,
+    });
+    setSent(true);
+    setContactForm({ name: "", email: "", message: "" });
+  } catch (err) {
+    console.error("Contact form error:", err);
+  }
+};
+
+// ── Fetch posts from DB ──
+const fetchCommunityPosts = async (page = 1, replace = false) => {
+  setCommunityLoading(true);
+  try {
+    const { data } = await api.get(`/community?page=${page}&limit=6`);
+    setCommunityPosts(prev => replace ? data.posts : [...prev, ...data.posts]);
+    setCommunityTotal(data.total);
+    setCommunityPage(page);
+  } catch (err) {
+    console.error("Failed to load posts:", err);
+  } finally {
+    setCommunityLoading(false);
+  }
+};
+
+// ── Load more button ──
+const handleLoadMore = () => {
+  if (!communityLoading && communityPosts.length < communityTotal) {
+    fetchCommunityPosts(communityPage + 1);
+  }
+};
+
+// ── Submit new post (logged-in only) ──
+const handlePostSubmit = async () => {
+  if (!postForm.body.trim()) {
+    setPostError("Please write something before sharing.");
+    return;
+  }
+  setPostError("");
+  try {
+    await api.post("/community", postForm);
+    setPostForm({ body: "", tag: "General", isAnonymous: false });
+    setPostOpen(false);
+    setPostSuccess("Your experience has been shared!");
+    fetchCommunityPosts(1, true); // refresh list
+    setTimeout(() => setPostSuccess(""), 4000);
+  } catch (err) {
+    setPostError(err?.response?.data?.message || "Failed to post. Try again.");
+  }
+};
+
+// ── Fetch on mount ──
+useEffect(() => {
+  fetchCommunityPosts(1, true);
+}, []);
 
   const goToPage = (targetPage, direction) => {
     if (carouselAnimating || targetPage === carouselPage) return;
@@ -132,7 +195,6 @@ export default function Home() {
     carouselPage * CARDS_PER_PAGE,
     carouselPage * CARDS_PER_PAGE + CARDS_PER_PAGE
   );
-
   return (
     <div className="gs-root">
 
@@ -324,136 +386,199 @@ export default function Home() {
       </section>
 
       {/* ── COMMUNITY ── */}
-      <section
-        id="community"
-        className={`gs-section gs-community ${communityIn ? "gs-visible" : ""}`}
-        ref={communityRef}
-      >
-        <div className="gs-section-inner">
+<section
+  id="community"
+  className={`gs-section gs-community ${communityIn ? "gs-visible" : ""}`}
+  ref={communityRef}
+>
+  <div className="gs-section-inner">
 
-          {/* Section header */}
-          <div className="gs-community-header-row">
-            <div>
-              <h2 className="gs-section-title">
-                Workers speaking up.<br />
-                <span className="gs-accent">Anonymously. Safely.</span>
-              </h2>
-              <p className="gs-section-sub">
-                Thousands of gig workers share experiences, raise issues, and support each other every day on GigShield.
-              </p>
-            </div>
+    {/* Section header */}
+    <div className="gs-community-header-row">
+      <div>
+        <h2 className="gs-section-title">
+          Workers speaking up.<br />
+          <span className="gs-accent">Anonymously. Safely.</span>
+        </h2>
+        <p className="gs-section-sub">
+          Thousands of gig workers share experiences, raise issues, and support each other every day on GigShield.
+        </p>
+      </div>
+    </div>
 
-            {/* ── DB HOOK: replace this static badge with a live post count from your API ── */}
-            <div className="gs-community-live-badge">
-              <span className="gs-live-dot" />
-              <span>Live community</span>
-            </div>
-          </div>
-
-          {/*
-            ── DATABASE INTEGRATION POINT ──
-            Replace `communityPosts` below with data fetched from your backend.
-
-            Example with useEffect:
-            ─────────────────────────────────────────────────────────────────
-            const [communityPosts, setCommunityPosts] = useState([]);
-            const [loading, setLoading] = useState(true);
-
-            useEffect(() => {
-              fetch("/api/community/posts?limit=6&sort=recent")
-                .then((res) => res.json())
-                .then((data) => {
-                  setCommunityPosts(data.posts);   // shape: { id, initials, name, role, time, body, likes, tag, verified }
-                  setLoading(false);
-                })
-                .catch(() => setLoading(false));
-            }, []);
-            ─────────────────────────────────────────────────────────────────
-            You can also pass `tag` and `verified` fields per post for the
-            badge and verified-tick UI rendered below.
-          */}
-
-          <div className="gs-community-grid">
-            {communityPosts.map((p, i) => (
-              <div
-                className="gs-community-card"
-                key={/* ── DB: use p.id instead of i once you have real IDs ── */ i}
-                style={{ animationDelay: `${i * 0.1}s` }}
+    {/* ── Post box — logged in users only ── */}
+    {isLoggedIn ? (
+      <div style={{ marginBottom: 28 }}>
+        {postSuccess && (
+          <p style={{ color: "#2a6c2c", fontSize: 13, marginBottom: 10 }}>✓ {postSuccess}</p>
+        )}
+        {!postOpen ? (
+          <button className="gs-community-load-more" onClick={() => setPostOpen(true)}>
+            + Share your experience
+          </button>
+        ) : (
+          <div style={{ background: "#fff", borderRadius: 14, padding: 20, border: "1px solid #e0e7e5" }}>
+            <textarea
+              rows={3}
+              placeholder="Share your experience anonymously or with your name…"
+              value={postForm.body}
+              onChange={e => setPostForm(f => ({ ...f, body: e.target.value }))}
+              style={{ width: "100%", borderRadius: 8, border: "1.5px solid #e0e7e5", padding: "10px 12px", fontSize: 13, resize: "none", outline: "none", fontFamily: "inherit" }}
+            />
+            <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <select
+                value={postForm.tag}
+                onChange={e => setPostForm(f => ({ ...f, tag: e.target.value }))}
+                style={{ padding: "6px 12px", borderRadius: 8, border: "1.5px solid #e0e7e5", fontSize: 12, outline: "none" }}
               >
-                {/* Top accent bar — colour cycles per card */}
-                <div className={`gs-community-card-bar gs-community-card-bar--${(i % 3) + 1}`} />
+                <option>General</option>
+                <option>Safety</option>
+                <option>Wages</option>
+                <option>SOS</option>
+              </select>
+              <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={postForm.isAnonymous}
+                  onChange={e => setPostForm(f => ({ ...f, isAnonymous: e.target.checked }))}
+                />
+                Post anonymously
+              </label>
+              <button
+                className="gs-contact-submit"
+                style={{ padding: "8px 20px", marginLeft: "auto" }}
+                onClick={handlePostSubmit}
+              >
+                Share →
+              </button>
+              <button
+                onClick={() => { setPostOpen(false); setPostError(""); }}
+                style={{ background: "none", border: "none", color: "#999", fontSize: 12, cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+            </div>
+            {postError && (
+              <p style={{ color: "#ef4444", fontSize: 12, marginTop: 8 }}>{postError}</p>
+            )}
+          </div>
+        )}
+      </div>
+    ) : (
+      /* ── Guest prompt ── */
+      <div style={{ marginBottom: 28, padding: "14px 20px", borderRadius: 10, background: "rgba(42,108,44,0.06)", border: "1px solid rgba(42,108,44,0.15)", fontSize: 13, color: "#2a6c2c" }}>
+        <strong>Want to share your experience?</strong>{" "}
+        <button
+          onClick={() => navigate("/login/worker")}
+          style={{ background: "none", border: "none", color: "#2a6c2c", fontWeight: 700, cursor: "pointer", textDecoration: "underline", fontSize: 13 }}
+        >
+          Log in to post
+        </button>
+      </div>
+    )}
 
-                <div className="gs-community-card-inner">
-                  {/* Avatar + author */}
-                  <div className="gs-community-top">
-                    <div className={`gs-community-avatar gs-community-avatar--${(i % 3) + 1}`}>
-                      {p.initials}
-                    </div>
-                    <div className="gs-community-author">
-                      <div className="gs-community-name">
-                        {p.name}
-                        {/* ── DB: render verified tick when p.verified === true ── */}
-                        {/* {p.verified && <span className="gs-verified-tick">✓</span>} */}
-                      </div>
-                      <div className="gs-community-role">{p.role}</div>
-                    </div>
-                    <span className="gs-community-time">{p.time}</span>
-                  </div>
+    {/* ── Posts grid ── */}
+    {communityLoading && communityPosts.length === 0 ? (
+      <div style={{ textAlign: "center", padding: "40px 0", color: "#5a6362", fontSize: 14 }}>
+        Loading posts…
+      </div>
+    ) : communityPosts.length === 0 ? (
+      <div style={{ textAlign: "center", padding: "40px 0", color: "#5a6362", fontSize: 14 }}>
+        No posts yet. Be the first to share your experience!
+      </div>
+    ) : (
+      <div className="gs-community-grid">
+        {communityPosts.map((p, i) => (
+          <div
+            className="gs-community-card"
+            key={p._id}
+            style={{ animationDelay: `${i * 0.1}s` }}
+          >
+            <div className={`gs-community-card-bar gs-community-card-bar--${(i % 3) + 1}`} />
+            <div className="gs-community-card-inner">
 
-                  {/* Optional tag badge — uncomment once DB sends a `tag` field */}
-                  {/* ── DB: p.tag e.g. "Wages", "Safety", "SOS" ── */}
-                  {/* {p.tag && (
-                    <span className="gs-community-tag">{p.tag}</span>
-                  )} */}
-
-                  {/* Post body */}
-                  <p className="gs-community-body">"{p.body}"</p>
-
-                  {/* Footer */}
-                  <div className="gs-community-footer">
-                    <button className="gs-community-like-btn">
-                      {/* ── DB: wire onClick to POST /api/community/posts/:id/like ── */}
-                      <span className="gs-heart-icon">♥</span>
-                      <span>{p.likes} found this helpful</span>
-                    </button>
-
-                    {/* ── DB: uncomment and wire to reply count from API ── */}
-                    {/* <span className="gs-community-reply-count">💬 {p.replies} replies</span> */}
-                  </div>
+              {/* Avatar + author */}
+              <div className="gs-community-top">
+                <div className={`gs-community-avatar gs-community-avatar--${(i % 3) + 1}`}>
+                  {p.initials}
                 </div>
+                <div className="gs-community-author">
+                  <div className="gs-community-name">{p.name}</div>
+                  <div className="gs-community-role">{p.role}</div>
+                </div>
+                <span className="gs-community-time">
+                  {new Date(p.createdAt).toLocaleDateString("en-IN", {
+                    day: "2-digit", month: "short"
+                  })}
+                </span>
               </div>
-            ))}
+
+              {/* Tag badge */}
+              {p.tag && p.tag !== "General" && (
+                <span style={{
+                  display: "inline-block", fontSize: 10, fontWeight: 700,
+                  textTransform: "uppercase", letterSpacing: "0.08em",
+                  padding: "3px 10px", borderRadius: 4, marginBottom: 10,
+                  background: p.tag === "Safety" ? "rgba(239,68,68,0.08)" : p.tag === "Wages" ? "rgba(245,158,11,0.1)" : "rgba(42,108,44,0.08)",
+                  color:      p.tag === "Safety" ? "#ef4444"              : p.tag === "Wages" ? "#b45309"              : "#2a6c2c",
+                }}>
+                  {p.tag}
+                </span>
+              )}
+
+              {/* Body */}
+              <p className="gs-community-body">"{p.body}"</p>
+
+              {/* Footer — like button */}
+              <div className="gs-community-footer">
+                <button
+                  className="gs-community-like-btn"
+                  onClick={async () => {
+                    if (!isLoggedIn) { navigate("/login/worker"); return; }
+                    try {
+                      const { data } = await api.post(`/community/${p._id}/like`);
+                      setCommunityPosts(prev =>
+                        prev.map(post =>
+                          post._id === p._id
+                            ? { ...post, likes: data.likes }
+                            : post
+                        )
+                      );
+                    } catch (err) {
+                      console.error("Like failed:", err);
+                    }
+                  }}
+                >
+                  <span className="gs-heart-icon">♥</span>
+                  <span>{p.likes} found this helpful</span>
+                </button>
+              </div>
+
+            </div>
           </div>
+        ))}
+      </div>
+    )}
 
-          {/*
-            ── DB: Load-more / pagination ──
-            Replace the static button below with real pagination logic.
+    {/* ── Load more ── */}
+    <div className="gs-community-load-more-wrap">
+      <button
+        className="gs-community-load-more"
+        onClick={handleLoadMore}
+        disabled={communityLoading || communityPosts.length >= communityTotal}
+      >
+        {communityLoading
+          ? "Loading…"
+          : communityPosts.length >= communityTotal
+          ? "All caught up ✓"
+          : "Load more stories →"}
+      </button>
+    </div>
 
-            Example: track a `page` state and append results on click.
-            <button
-              className="gs-community-load-more"
-              onClick={() => {
-                setPage((prev) => prev + 1);
-                fetch(`/api/community/posts?limit=6&page=${page + 1}`)
-                  .then(res => res.json())
-                  .then(data => setCommunityPosts(prev => [...prev, ...data.posts]));
-              }}
-            >
-              Load more stories →
-            </button>
-          */}
-          <div className="gs-community-load-more-wrap">
-            <button className="gs-community-load-more">
-              {/* ── DB: remove disabled and wire up pagination (see comment above) ── */}
-              Load more stories →
-            </button>
-          </div>
-
-        </div>
-      </section>
+  </div>
+</section>
 
       {/* ── CTA BANNER ── */}
-      {/* ── CTA BANNER — Split layout ── */}
       <section className={`gs-cta ${ctaIn ? "gs-visible" : ""}`} ref={ctaRef}>
         <div className="gs-cta-orb gs-cta-orb--1" />
         <div className="gs-cta-orb gs-cta-orb--2" />
@@ -487,8 +612,7 @@ export default function Home() {
               <button
                 className="gs-btn-outline"
                 onClick={() =>
-                  document.getElementById("contact").scrollIntoView({ behavior: "smooth" })
-                }
+                  setShowUnionModal(true)}
               >
                 For Unions &amp; NGOs →
               </button>
@@ -560,10 +684,18 @@ export default function Home() {
                 <div className="gs-contact-success-icon">✓</div>
                 <h3>Message received!</h3>
                 <p>We'll get back to you within 24 hours. Thank you for reaching out.</p>
-              </div>
+                <button
+                className="gs-contact-submit"
+                style={{ marginTop: 20 }}
+
+                onClick={() => setSent(false)}
+                >
+                  Send another message <span>→</span>
+                  </button>
+                </div>
             ) : (
               <div className="gs-contact-form">
-
+                
                 <div className="gs-contact-field">
                   <label className="gs-contact-label">Your name</label>
                   <input
@@ -573,6 +705,7 @@ export default function Home() {
                     value={contactForm.name}
                     onChange={(e) => setContactForm((p) => ({ ...p, name: e.target.value }))}
                   />
+                  
                 </div>
 
                 <div className="gs-contact-field">
@@ -655,18 +788,137 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ── */}
-<footer className="gs-footer">
-  <div className="gs-footer-top">
-    <div className="gs-footer-brand">
-      <img src={gigshieldLogo} alt="GigShield" className="gs-nav-logo-img" />
+      <footer className="gs-footer">
+        <div className="gs-footer-top">
+          <div className="gs-footer-brand">
+            <img src={gigshieldLogo} alt="GigShield" className="gs-nav-logo-img" />
+          </div>
+        </div>
+      <div className="gs-footer-divider" />
+      <p className="gs-footer-copy">© 2026 GigShield · AI Safety Platform for India's Gig Workers · Privacy-First · Offline-Ready</p>
+     </footer>
+     {/* ── UNION / NGO MODAL ── */}
+{showUnionModal && (
+  <div
+    style={{
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "20px",
+    }}
+    onClick={() => setShowUnionModal(false)}
+  >
+    <div
+      style={{
+        background: "#fff", borderRadius: 18, padding: "36px 32px",
+        maxWidth: 560, width: "100%", maxHeight: "80vh", overflowY: "auto",
+        position: "relative",
+      }}
+      onClick={e => e.stopPropagation()}
+    >
+      {/* Close */}
+      <button
+        onClick={() => setShowUnionModal(false)}
+        style={{
+          position: "absolute", top: 16, right: 18,
+          background: "none", border: "none", fontSize: 22,
+          cursor: "pointer", color: "#888",
+        }}
+      >
+        ✕
+      </button>
+
+      <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4, color: "#1a1a1a" }}>
+        Union &amp; NGO Resources
+      </h3>
+      <p style={{ fontSize: 13, color: "#5a6362", marginBottom: 24 }}>
+        Official government bodies and helplines for labour rights in India.
+      </p>
+
+      {[
+        {
+          category: "Central Government",
+          items: [
+            { name: "Ministry of Labour & Employment", url: "https://labour.gov.in", phone: "011-23710933" },
+            { name: "Labour Helpline (National)", url: null, phone: "1800-11-1459" },
+            { name: "EPFO — Provident Fund", url: "https://epfindia.gov.in", phone: "1800-118-005" },
+            { name: "ESIC — Health Insurance", url: "https://esic.in", phone: "1800-11-2526" },
+          ],
+        },
+        {
+          category: "Gig & Platform Worker Bodies",
+          items: [
+            { name: "IFAT — Indian Federation of App-based Transport", url: "https://ifat.in", phone: null },
+            { name: "NITI Aayog Gig Economy Report", url: "https://niti.gov.in", phone: null },
+          ],
+        },
+        {
+          category: "NGOs & Legal Aid",
+          items: [
+            { name: "Jan Sahas — Migrant & Gig Workers", url: "https://jansahas.org", phone: "07324-220400" },
+            { name: "National Legal Services Authority", url: "https://nalsa.gov.in", phone: "15100" },
+            { name: "Aajeevika Bureau", url: "https://aajeevika.org", phone: "02942-432011" },
+          ],
+        },
+      ].map((section, si) => (
+        <div key={si} style={{ marginBottom: 24 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+            textTransform: "uppercase", color: "#2a6c2c", marginBottom: 10,
+          }}>
+            {section.category}
+          </div>
+          {section.items.map((item, ii) => (
+            <div key={ii} style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "10px 14px", borderRadius: 10, marginBottom: 6,
+              background: "#f7faf7", border: "1px solid #e0ede0",
+              flexWrap: "wrap", gap: 8,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}>
+                {item.name}
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {item.phone && (
+                  <a href={`tel:${item.phone}`} style={{
+                    fontSize: 12, color: "#2a6c2c", fontWeight: 600,
+                    textDecoration: "none", background: "rgba(42,108,44,0.08)",
+                    padding: "4px 10px", borderRadius: 6,
+                  }}>
+                    📞 {item.phone}
+                  </a>
+                )}
+                {item.url && (
+                  <a href={item.url} target="_blank" rel="noreferrer" style={{
+                    fontSize: 12, color: "#fff", fontWeight: 600,
+                    textDecoration: "none", background: "#2a6c2c",
+                    padding: "4px 10px", borderRadius: 6,
+                  }}>
+                    Visit →
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+
+      {/* Bottom CTA — scroll to contact */}
+      <button
+        className="gs-contact-submit"
+        style={{ width: "100%", marginTop: 8 }}
+        onClick={() => {
+          setShowUnionModal(false);
+          setTimeout(() =>
+            document.getElementById("contact").scrollIntoView({ behavior: "smooth" }), 100
+          );
+        }}
+      >
+        Contact GigShield directly →
+      </button>
     </div>
   </div>
-  <div className="gs-footer-divider" />
-  <p className="gs-footer-copy">
-    © 2026 GigShield · AI Safety Platform for India's Gig Workers · Privacy-First · Offline-Ready
-  </p>
-</footer>
-
+)}
     </div>
   );
 }

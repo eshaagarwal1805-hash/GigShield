@@ -1,21 +1,21 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "../styles/Auth.css";
-import api from "../api/axios"; // axios instance with JWT interceptor
+import api from "../api/axios";
 import gigshieldLogo from "../assets/Gigshield Logo.png";
 
-export default function Login() {
+export default function AdminLogin() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleChange = (e) =>
+  const handle = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async (e) => {
-    e?.preventDefault?.();
+  const submit = async (e) => {
+    e.preventDefault();
     setError("");
 
     if (!form.email || !form.password) {
@@ -25,21 +25,12 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const { data } = await api.post("/auth/login", {
-        email: form.email,
-        password: form.password,
-      });
-
-      // Save the JWT — your axios interceptor will pick it up automatically
+      const { data } = await api.post("/admin/login", form);
       localStorage.setItem("token", data.token);
-      localStorage.setItem('user', JSON.stringify(data.user)); // ✅ ADD
-      navigate("/dashboard");
+      localStorage.setItem("user", JSON.stringify(data.user));
+      navigate("/admin");
     } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Login failed. Please check your credentials.";
-      setError(msg);
+      setError(err.response?.data?.message || "Login failed.");
     } finally {
       setLoading(false);
     }
@@ -56,26 +47,39 @@ export default function Login() {
         </div>
         <div className="auth-panel-content">
           <div className="auth-logo" onClick={() => navigate("/")}>
-            <img src={gigshieldLogo} alt="GigShield" className="auth-logo-img" />
-            </div>
-            <div className="auth-panel-body">
-              <h2 className="auth-panel-title">Your safety<br />never clocks out.</h2>
-              <p className="auth-panel-sub">From shift logging to SOS alerts — GigShield protects you every step of the way.</p>
-            </div>
+            <img
+              src={gigshieldLogo}
+              alt="GigShield"
+              className="auth-logo-img"
+            />
+          </div>
+          <div className="auth-panel-body">
+            <h2 className="auth-panel-title">
+              Admin control,<br /> on your shield.
+            </h2>
+            <p className="auth-panel-sub">
+              Monitor alerts, review incidents, and keep GigShield safe for
+              every worker.
+            </p>
           </div>
         </div>
+      </div>
+
       {/* Right panel — form */}
       <div className="auth-panel auth-panel--right">
         <div className="auth-form-wrap">
           {/* Mobile logo */}
-          <div className="auth-logo auth-logo--mobile" onClick={() => navigate("/")}>
+          <div
+            className="auth-logo auth-logo--mobile"
+            onClick={() => navigate("/")}
+          >
             <span className="auth-logo-icon">🛡</span>
-            <span className="auth-logo-text">GigShield</span>
+            <span className="auth-logo-text">GigShield Admin</span>
           </div>
 
           <div className="auth-form-header">
-            <h1 className="auth-form-title">Welcome back</h1>
-            <p className="auth-form-sub">Sign in to access your GigShield dashboard.</p>
+            <h1 className="auth-form-title">Admin Login</h1>
+            <p className="auth-form-sub">Restricted access only.</p>
           </div>
 
           {error && (
@@ -85,19 +89,20 @@ export default function Login() {
             </div>
           )}
 
-          <div className="auth-fields">
+          <form onSubmit={submit} className="auth-fields">
             <div className="auth-field">
-              <label className="auth-label">Email address</label>
+              <label className="auth-label">Admin email</label>
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">✉</span>
                 <input
                   type="email"
                   name="email"
                   value={form.email}
-                  onChange={handleChange}
-                  placeholder="arjun@example.com"
+                  onChange={handle}
+                  placeholder="admin@gigshield.in"
                   className="auth-input"
-                  onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
+                  onKeyDown={(e) => e.key === "Enter" && submit(e)}
+                  required
                 />
               </div>
             </div>
@@ -105,7 +110,6 @@ export default function Login() {
             <div className="auth-field">
               <div className="auth-label-row">
                 <label className="auth-label">Password</label>
-                <a href="#" className="auth-forgot">Forgot password?</a>
               </div>
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">🔒</span>
@@ -113,10 +117,11 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   value={form.password}
-                  onChange={handleChange}
+                  onChange={handle}
                   placeholder="••••••••"
                   className="auth-input"
-                  onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
+                  onKeyDown={(e) => e.key === "Enter" && submit(e)}
+                  required
                 />
                 <button
                   type="button"
@@ -130,8 +135,10 @@ export default function Login() {
             </div>
 
             <button
-              className={`auth-btn-primary ${loading ? "auth-btn-primary--loading" : ""}`}
-              onClick={handleSubmit}
+              type="submit"
+              className={`auth-btn-primary ${
+                loading ? "auth-btn-primary--loading" : ""
+              }`}
               disabled={loading}
             >
               {loading ? (
@@ -140,26 +147,25 @@ export default function Login() {
                   Signing in…
                 </>
               ) : (
-                <>Sign In to GigShield <span className="auth-btn-arrow">→</span></>
+                <>
+                  Sign In as Admin{" "}
+                  <span className="auth-btn-arrow">→</span>
+                </>
               )}
             </button>
-          </div>
+          </form>
 
           <div className="auth-divider">
             <span className="auth-divider-line" />
-            <span className="auth-divider-text">New to GigShield?</span>
+            <span className="auth-divider-text">Need an admin account?</span>
             <span className="auth-divider-line" />
           </div>
 
-          <button
-            className="auth-btn-secondary"
-            onClick={() => navigate("/register/worker")}
-          >
-            Create a free account →
-          </button>
-
           <p className="auth-footer-note">
-            © 2026 GigShield · Privacy-First · Offline-Ready
+            No account?{" "}
+            <Link to="/admin/register" className="auth-footer-link">
+              Register here
+            </Link>
           </p>
         </div>
       </div>

@@ -52,6 +52,7 @@ export default function EmployerDashboardMain() {
   const [appsLoading, setAppsLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError]             = useState("");
+  const [appsError, setAppsError]     = useState("");
   const [formError, setFormError]     = useState("");
   const [formSuccess, setFormSuccess] = useState("");
   const [activeTab, setActiveTab]     = useState("listings");
@@ -91,11 +92,13 @@ export default function EmployerDashboardMain() {
     if (!token) { navigate("/login/employer"); return; }
 
     setAppsLoading(true);
+    setAppsError("");
     try {
       const res = await api.get("/employer/applications/mine");
       setApplications(res.data || []);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load applications.");
+      if (err.response?.status === 401) navigate("/login/employer");
+      else setAppsError(err.response?.data?.message || "Failed to load applications.");
     } finally {
       setAppsLoading(false);
     }
@@ -239,43 +242,67 @@ export default function EmployerDashboardMain() {
       {/* BODY */}
       <div className="emp-body">
 
-        <h1 className="emp-page-title">
-          {employer.companyName || "Your Company"}
-        </h1>
+        {/* Header with avatar + subtitle */}
+        <div className="emp-header-row">
+          <div className="emp-company-avatar">
+            {(employer.companyName || "E").charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h1 className="emp-page-title">{employer.companyName || "Your Company"}</h1>
+            <p className="emp-page-subtitle">Employer Dashboard</p>
+          </div>
+        </div>
 
         {/* Stats */}
         <div className="emp-stats-row">
           <div className="emp-stat-card">
+            <div className="emp-stat-icon">📋</div>
             <div className="emp-stat-label">Open Listings</div>
-            <div className="emp-stat-value">{openJobs}</div>
+            <div className="emp-stat-value">{openJobs || <span className="emp-stat-empty">No open gigs</span>}</div>
           </div>
           <div className="emp-stat-card">
+            <div className="emp-stat-icon">⏳</div>
             <div className="emp-stat-label">Pending Review</div>
-            <div className="emp-stat-value">{pendingApps}</div>
+            <div className="emp-stat-value">{pendingApps || <span className="emp-stat-empty">All clear</span>}</div>
           </div>
           <div className="emp-stat-card">
+            <div className="emp-stat-icon">✅</div>
             <div className="emp-stat-label">Hired</div>
-            <div className="emp-stat-value">{hiredCount}</div>
+            <div className="emp-stat-value">{hiredCount || <span className="emp-stat-empty">None yet</span>}</div>
           </div>
           <div className="emp-stat-card">
+            <div className="emp-stat-icon">👥</div>
             <div className="emp-stat-label">Total Applications</div>
-            <div className="emp-stat-value">{applications.length}</div>
+            <div className="emp-stat-value">{applications.length || <span className="emp-stat-empty">Awaiting</span>}</div>
           </div>
         </div>
 
-        {/* Global error */}
-        {error && <div className="emp-alert-error">⚠ {error}</div>}
+        {/* Global error — only shown for job-fetch failures (rate limit, server errors) */}
+        {error && (
+          <div className="emp-alert-warning">
+            <span className="emp-alert-warning-icon">⚠️</span>
+            <div style={{ flex: 1 }}>
+              <strong>Having trouble loading listings.</strong>
+              <span> {error} Please wait a moment and </span>
+              <button className="emp-alert-retry-btn" onClick={() => { setError(""); fetchJobs(); }}>
+                try again
+              </button>
+              .
+            </div>
+            <button className="emp-alert-dismiss-btn" onClick={() => setError("")} title="Dismiss">✕</button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="emp-tabs">
           <button className={tabClass("listings")} onClick={() => setActiveTab("listings")}>
-            My Listings
+            📋 My Listings
           </button>
           <button className={tabClass("post")} onClick={() => setActiveTab("post")}>
-            + Post Gig
+            ✏️ Post Gig
           </button>
           <button className={tabClass("applications")} onClick={() => { setJobFilter("all"); setActiveTab("applications"); }}>
-            Applications {pendingApps > 0 && <span className="emp-tab-badge">{pendingApps} pending</span>}
+            👥 Applications {pendingApps > 0 && <span className="emp-tab-badge">{pendingApps} pending</span>}
           </button>
         </div>
 
@@ -286,9 +313,11 @@ export default function EmployerDashboardMain() {
               <div className="emp-loading">Loading listings…</div>
             ) : jobs.length === 0 ? (
               <div className="emp-empty">
-                <p>No gigs posted yet.</p>
-                <button className="emp-btn-primary" onClick={() => setActiveTab("post")}>
-                  Post your first gig →
+                <div className="emp-empty-icon">📭</div>
+                <p className="emp-empty-title">No gigs posted yet.</p>
+                <p className="emp-empty-desc">Start attracting talent by posting your first gig. It only takes a minute!</p>
+                <button className="emp-btn-primary emp-empty-cta" onClick={() => setActiveTab("post")}>
+                  ✏️ Post your first gig →
                 </button>
               </div>
             ) : (
@@ -469,7 +498,19 @@ export default function EmployerDashboardMain() {
               )}
             </div>
 
-            {appError && <div className="emp-alert-error">⚠ {appError}</div>}
+            {appsError && (
+              <div className="emp-alert-warning">
+                <span className="emp-alert-warning-icon">⚠️</span>
+                <div style={{ flex: 1 }}>
+                  <strong>Could not load applications.</strong>
+                  <span> {appsError} </span>
+                  <button className="emp-alert-retry-btn" onClick={() => { setAppsError(""); fetchApplications(); }}>
+                    Retry
+                  </button>
+                </div>
+                <button className="emp-alert-dismiss-btn" onClick={() => setAppsError("")} title="Dismiss">✕</button>
+              </div>
+            )}
 
             {appsLoading ? (
               <div className="emp-loading">Loading applications…</div>
