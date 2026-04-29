@@ -85,7 +85,7 @@ const updatePassword = async () => {
           </div>
           <div>
             <div className="as-card-title">Email Address</div>
-            <div className="as-card-subtitle">Used for login and notifications</div>
+          <div className="as-card-subtitle">Change your registered email address</div>
           </div>
         </div>
 
@@ -111,7 +111,7 @@ const updatePassword = async () => {
           </div>
           <div>
             <div className="as-card-title">Phone Number</div>
-            <div className="as-card-subtitle">For SMS alerts and emergency contact</div>
+            <div className="as-card-subtitle">Change your contact number</div>
           </div>
         </div>
 
@@ -137,7 +137,7 @@ const updatePassword = async () => {
           </div>
           <div>
             <div className="as-card-title">Change Password</div>
-            <div className="as-card-subtitle">Keep your account secure</div>
+            <div className="as-card-subtitle">Update your account password</div>
           </div>
         </div>
 

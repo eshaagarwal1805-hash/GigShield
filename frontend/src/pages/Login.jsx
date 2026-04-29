@@ -32,8 +32,8 @@ export default function Login() {
 
       // Save the JWT — your axios interceptor will pick it up automatically
       localStorage.setItem("token", data.token);
-
-      navigate("/dashboard/worker");
+      localStorage.setItem('user', JSON.stringify(data.user)); // ✅ ADD
+      navigate("/dashboard");
     } catch (err) {
       const msg =
         err.response?.data?.message ||

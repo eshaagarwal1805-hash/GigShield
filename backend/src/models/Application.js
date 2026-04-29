@@ -1,67 +1,40 @@
-// backend/src/models/Application.js
-
 const mongoose = require("mongoose");
 
 const applicationSchema = new mongoose.Schema(
   {
-    // Worker who applied (GigShield User with role: 'worker')
     worker: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
-    // Job being applied to (your employer Job model)
-    job: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Job",
-      required: true,
-    },
-
-    // Employer who owns the job (denormalized for fast queries)
+    // Denormalised employer ref — enables scoped queries in employer.js
+    // e.g. Application.find({ employer: req.user.id })
     employer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Employer", // or "User" if you store employers in User
+      ref: "Employer",
       required: true,
     },
-
-    // Optional short message / cover note
-    message: {
-      type: String,
-      trim: true,
-      maxlength: 1000,
+    job: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "JobPosting", // matches mongoose.model('JobPosting', ...) in Jobposting.js
+      required: true,
     },
-
-    // Expected daily pay or shift pay from worker’s side (optional)
-    expectedPay: {
-      type: Number,
-      min: 0,
-    },
-
-    // Shift preference (e.g. "Day", "Night", "Flexible")
-    shiftPreference: {
-      type: String,
-      enum: ["Day", "Night", "Flexible", "Not specified"],
-      default: "Not specified",
-    },
-
-    // Status of application
     status: {
       type: String,
-      enum: ["Pending", "Shortlisted", "Rejected", "Hired"],
+      // Capitalised to match employer dashboard actions and STATUS_COLORS map
+      enum: ["Pending", "Shortlisted", "Hired", "Rejected"],
       default: "Pending",
-      index: true,
+    },
+    coverNote: {
+      type: String,
+      trim: true,
+      maxlength: 500,
     },
   },
-  {
-    timestamps: true, // createdAt, updatedAt
-  }
+  { timestamps: true }
 );
 
-// Each worker should apply only once per job (prevent duplicates)
+// Prevent a worker from applying to the same job twice
 applicationSchema.index({ worker: 1, job: 1 }, { unique: true });
-
-// Fast lookup by employer for dashboard
-applicationSchema.index({ employer: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Application", applicationSchema);

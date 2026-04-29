@@ -10,10 +10,11 @@
   background: var(--db-surface);
   border: 1px solid var(--db-border);
   border-radius: 16px;
-  padding: 28px 32px;
+  padding: 32px 40px;
   box-shadow: var(--db-shadow);
-  margin-bottom: 20px;
+  margin-bottom: 28px;
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  max-width: 720px;
 }
 .as-card:hover {
   box-shadow: var(--db-shadow-lg);
@@ -25,8 +26,8 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding-bottom: 18px;
-  margin-bottom: 22px;
+  padding-bottom: 22px;
+  margin-bottom: 28px;
   border-bottom: 1px solid var(--db-border);
 }
 .as-icon-box {
@@ -97,7 +98,7 @@
 
 /* ── Button ── */
 .as-btn {
-  margin-top: 16px;
+  margin-top: 24px;
   padding: 11px 26px;
   border-radius: 10px;
   border: none;

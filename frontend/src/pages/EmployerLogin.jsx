@@ -29,7 +29,8 @@ export default function EmployerLogin() {
       const res = await api.post("/employer/login", formData);
       localStorage.setItem("employer_token", res.data.token);
       localStorage.setItem("employer_user", JSON.stringify(res.data.employer));
-      navigate("/dashboard/employer");
+      localStorage.getItem("employer_token");
+      navigate("/employer/dashboard");
     } catch (err) {
       setError(
         err.response?.data?.message ||

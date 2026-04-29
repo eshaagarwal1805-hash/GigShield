@@ -45,56 +45,44 @@ export default function Register() {
   };
 
   const handleSubmit = async () => {
-    setError("");
+  setError("");
 
-    if (!form.workerType) {
-      setError("Please select your worker type.");
-      return;
-    }
-    if (!form.password || form.password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-    if (form.password !== form.confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
+  if (!form.workerType) {
+    setError("Please select your worker type.");
+    return;
+  }
+  if (!form.password || form.password.length < 6) {
+    setError("Password must be at least 6 characters.");
+    return;
+  }
+  if (form.password !== form.confirm) {
+    setError("Passwords do not match.");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      // Step 1 — Register the new account
-      await api.post("/auth/register", {
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        workerType: form.workerType,
-        password: form.password,
-      });
+  setLoading(true);
+  try {
+    await api.post("/auth/register", {
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      workerType: form.workerType,
+      password: form.password,
+    });
 
-      // Step 2 — Auto-login immediately after registration
-      const { data } = await api.post("/auth/login", {
-        email: form.email,
-        password: form.password,
-      });
+    // ✅ Use window.location instead of navigate
+    window.location.href = "/login/worker";
 
-      // Save JWT — axios interceptor will attach it to future requests
-      localStorage.setItem("token", data.token);
-
-      navigate("/dashboard/worker");
-    } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Registration failed. Please try again.";
-      setError(msg);
-      // If register succeeded but login failed, still send them to login
-      if (err.config?.url?.includes("/auth/login")) {
-        navigate("/login/worker");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    const msg =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      "Registration failed. Please try again.";
+    setError(msg);  // ✅ removed dead auto-login catch code
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="auth-root">
@@ -293,7 +281,7 @@ export default function Register() {
                       Creating account…
                     </>
                   ) : (
-                    <>Create Account <span className="auth-btn-arrow">→</span></>
+                    <>Create Account </>
                   )}
                 </button>
               </div>

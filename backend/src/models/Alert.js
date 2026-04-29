@@ -48,7 +48,16 @@ const alertSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-  },
+  nearestService: {
+  name:            { type: String, default: '' },
+  address:         { type: String, default: '' },
+  type:            { type: String, default: '' },
+  emergencyNumber: { type: String, default: '112' },
+  lat:             { type: String, default: '' },
+  lng:             { type: String, default: '' },
+},
+
+},
   {
     timestamps: true,
   }

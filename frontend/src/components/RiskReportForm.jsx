@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import api from "../api/axios";
+//import api from "../api/axios";
+import { submitRiskReport } from '../api/safety';
 const CATEGORIES = [
   { value: "theft",       label: "Theft",        icon: "local_police" },
   { value: "harassment",  label: "Harassment",   icon: "report"       },
@@ -17,7 +18,7 @@ const Icon = ({ name, style = {} }) => (
   </span>
 );
 
-export default function RiskReportForm() {
+export default function RiskReportForm({ onSubmitted }) {
   const [description,     setDescription]     = useState("");
   const [category,        setCategory]        = useState("theft");
   const [coords,          setCoords]          = useState(null);
@@ -25,36 +26,54 @@ export default function RiskReportForm() {
   const [status,          setStatus]          = useState(null);
   const [submitting,      setSubmitting]      = useState(false);
 
-  useEffect(() => {
-    if (!navigator.geolocation) { setLocationStatus("Location unavailable"); return; }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+useEffect(() => {
+  if (!navigator.geolocation) { setLocationStatus("Location unavailable"); return; }
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      setCoords({ lat: latitude, lng: longitude });
+      setLocationStatus("Detecting area…");
+      try {
+        const res = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        const data = await res.json();
+        const addr = data?.address;
+        const area =
+          addr?.suburb || addr?.neighbourhood || addr?.city_district ||
+          addr?.village || addr?.town || addr?.city || "Unknown area";
+        const city =
+          addr?.city || addr?.town || addr?.state_district || addr?.state || "";
+        setLocationStatus(area !== city && city ? `${area}, ${city}` : area);
+      } catch {
         setLocationStatus("Location detected");
-      },
-      () => setLocationStatus("Location unavailable")
-    );
-  }, []);
+      }
+    },
+    () => setLocationStatus("Location unavailable")
+  );
+}, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!description.trim()) return;
     setSubmitting(true); setStatus(null);
     try {
-      await api.post("/safety/report", {
+      await submitRiskReport({
         description: description.trim(),
         category,
         location: { coordinates: coords ? [coords.lng, coords.lat] : [0, 0] },
       });
       setStatus({ type: "success", message: "Report submitted anonymously. Thank you for keeping the community safe." });
       setDescription(""); setCategory("theft");
+      if (onSubmitted) onSubmitted();
+      setTimeout(() => setStatus(null), 5000);
     } catch (err) {
       setStatus({ type: "error", message: err?.response?.data?.message || "Failed to submit. Please try again." });
     } finally {
       setSubmitting(false);
     }
   };
-
   const selectedCat = CATEGORIES.find((c) => c.value === category);
 
   return (
@@ -128,9 +147,11 @@ export default function RiskReportForm() {
           <textarea
             rows={4}
             required
+            maxLength={500}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe the safety concern in detail…"
+
             style={{
               width: "100%", boxSizing: "border-box",
               background: "var(--db-bg)",
@@ -219,11 +240,11 @@ export default function RiskReportForm() {
               style={{ fontSize: 15, color: coords ? "var(--db-primary)" : "var(--db-muted)" }}
             />
             {locationStatus}
-            {coords && (
-              <span style={{ fontSize: 11, opacity: 0.65, fontFamily: "monospace" }}>
-                ({coords.lat.toFixed(4)}, {coords.lng.toFixed(4)})
-              </span>
-            )}
+{coords && (
+  <span style={{ fontSize: 11, opacity: 0.65, fontFamily: "monospace" }}>
+    ({coords.lat.toFixed(4)}, {coords.lng.toFixed(4)})
+  </span>
+)}
           </div>
           {!coords && (
             <p style={{ fontSize: 11, color: "var(--db-muted)", marginTop: 6 }}>

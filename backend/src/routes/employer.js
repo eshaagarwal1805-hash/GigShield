@@ -4,31 +4,28 @@ const jwt = require('jsonwebtoken');
 
 const Employer = require('../models/Employer');
 const JobPosting = require('../models/Jobposting');
+const Application = require('../models/Application');
 const { protect } = require('../middleware/authMiddleware');
+
 const router = express.Router();
 
 // ─── POST /api/employer/register ─────────────────────────────────────────────
-// Public — create a new employer account
 router.post('/register', async (req, res) => {
   try {
     const { companyName, email, phone, password, industry } = req.body;
 
-    // Basic field validation
     if (!companyName || !email || !phone || !password) {
       return res.status(400).json({ message: 'companyName, email, phone, and password are required.' });
     }
 
-    // Duplicate email check
     const existing = await Employer.findOne({ email: email.toLowerCase() });
     if (existing) {
       return res.status(409).json({ message: 'An employer account with this email already exists.' });
     }
 
-    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Save the employer document
     const employer = await Employer.create({
       companyName,
       email,
@@ -37,14 +34,12 @@ router.post('/register', async (req, res) => {
       industry,
     });
 
-    // Sign JWT
     const token = jwt.sign(
       { id: employer._id, role: 'employer' },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    // Return token + employer (without passwordHash)
     const { passwordHash: _omit, ...employerObj } = employer.toObject();
     return res.status(201).json({ token, employer: employerObj });
   } catch (err) {
@@ -54,7 +49,6 @@ router.post('/register', async (req, res) => {
 });
 
 // ─── POST /api/employer/login ─────────────────────────────────────────────────
-// Public — authenticate an employer
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -87,8 +81,45 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// ─── GET /api/employer/profile ────────────────────────────────────────────────
+// Protected — return the authenticated employer's profile
+router.get('/profile', protect, async (req, res) => {
+  try {
+    const employer = await Employer.findById(req.user.id).select('-passwordHash');
+    if (!employer) return res.status(404).json({ message: 'Employer not found.' });
+    return res.status(200).json(employer);
+  } catch (err) {
+    console.error('Fetch profile error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// ─── PATCH /api/employer/profile ──────────────────────────────────────────────
+// Protected — update company profile fields
+router.patch('/profile', protect, async (req, res) => {
+  try {
+    const allowed = ['companyName', 'phone', 'industry'];
+    const updates = {};
+    allowed.forEach((key) => {
+      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    });
+
+    const employer = await Employer.findByIdAndUpdate(
+      req.user.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select('-passwordHash');
+
+    if (!employer) return res.status(404).json({ message: 'Employer not found.' });
+    return res.status(200).json(employer);
+  } catch (err) {
+    console.error('Update profile error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 // ─── POST /api/employer/jobs ──────────────────────────────────────────────────
-// Protected — create a new job posting for the authenticated employer
+// Protected — create a new job posting
 router.post('/jobs', protect, async (req, res) => {
   try {
     const { title, platform, pay, location, description } = req.body;
@@ -113,8 +144,21 @@ router.post('/jobs', protect, async (req, res) => {
   }
 });
 
+// ─── GET /api/employer/jobs/mine ─────────────────────────────────────────────
+// Protected — list this employer's own postings
+// NOTE: must be declared BEFORE /jobs/:id to avoid Express treating "mine" as an id
+router.get('/jobs/mine', protect, async (req, res) => {
+  try {
+    const jobs = await JobPosting.find({ employerId: req.user.id }).sort({ postedAt: -1 });
+    return res.status(200).json(jobs);
+  } catch (err) {
+    console.error('Fetch jobs error:', err);
+    return res.status(500).json({ message: 'Server error while fetching jobs.' });
+  }
+});
+
 // ─── GET /api/employer/jobs ───────────────────────────────────────────────────
-// Protected — list all job postings belonging to the authenticated employer
+// Protected — same as /mine (kept for backward compat)
 router.get('/jobs', protect, async (req, res) => {
   try {
     const jobs = await JobPosting.find({ employerId: req.user.id }).sort({ postedAt: -1 });
@@ -125,12 +169,8 @@ router.get('/jobs', protect, async (req, res) => {
   }
 });
 
-// ─── GET /api/jobs ────────────────────────────────────────────────────────────
-// Public — list all open job postings (mounted under /api/employer, so the
-// full path becomes /api/employer/open-jobs when reached via /api/employer).
-// Because server.js mounts this router at /api/employer, we expose a separate
-// top-level public path by exporting a second mini-router below.
-// See the server.js note at the bottom of this file.
+// ─── GET /api/employer/open-jobs ─────────────────────────────────────────────
+// Public — all open listings (for worker-facing browse page)
 router.get('/open-jobs', async (req, res) => {
   try {
     const jobs = await JobPosting.find({ status: 'open' })
@@ -142,23 +182,84 @@ router.get('/open-jobs', async (req, res) => {
     return res.status(500).json({ message: 'Server error while fetching open jobs.' });
   }
 });
-// GET /api/employer/jobs/mine — employer's own jobs
-router.get('/jobs/mine', protect, async (req, res) => {
+
+// ─── PATCH /api/employer/jobs/:id/status ─────────────────────────────────────
+// Protected — toggle a job between 'open' and 'closed'
+router.patch('/jobs/:id/status', protect, async (req, res) => {
   try {
-    const jobs = await JobPosting.find({ employerId: req.user.id }).sort({ postedAt: -1 });
-    return res.status(200).json(jobs);
+    const { status } = req.body;
+    if (!['open', 'closed'].includes(status)) {
+      return res.status(400).json({ message: "status must be 'open' or 'closed'." });
+    }
+
+    const job = await JobPosting.findOneAndUpdate(
+      { _id: req.params.id, employerId: req.user.id }, // scoped to owner
+      { $set: { status } },
+      { new: true }
+    );
+
+    if (!job) return res.status(404).json({ message: 'Job not found or not yours.' });
+    return res.status(200).json(job);
   } catch (err) {
-    return res.status(500).json({ message: 'Server error while fetching jobs.' });
+    console.error('Update job status error:', err);
+    return res.status(500).json({ message: 'Server error.' });
   }
 });
 
-// DELETE /api/employer/jobs/:id
+// ─── DELETE /api/employer/jobs/:id ───────────────────────────────────────────
+// Protected — scoped to the owning employer
 router.delete('/jobs/:id', protect, async (req, res) => {
   try {
-    await JobPosting.findByIdAndDelete(req.params.id);
-    return res.status(200).json({ message: 'Job deleted' });
+    const job = await JobPosting.findOneAndDelete({
+      _id: req.params.id,
+      employerId: req.user.id,   // prevent cross-employer deletion
+    });
+    if (!job) return res.status(404).json({ message: 'Job not found or not yours.' });
+    return res.status(200).json({ message: 'Job deleted.' });
   } catch (err) {
+    console.error('Delete job error:', err);
     return res.status(500).json({ message: 'Server error while deleting job.' });
+  }
+});
+
+// ─── GET /api/employer/applications/mine ─────────────────────────────────────
+// Protected — all applications for this employer's jobs
+router.get('/applications/mine', protect, async (req, res) => {
+  try {
+    // Application.employer (not employerId) — matches the model field name
+    const apps = await Application.find({ employer: req.user.id })
+      .populate('worker', 'name email phone')
+      .populate('job', 'title platform pay location')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json(apps);
+  } catch (err) {
+    console.error('Fetch applications error:', err);
+    return res.status(500).json({ message: 'Error fetching applications.' });
+  }
+});
+
+// ─── PATCH /api/employer/applications/:id/status ─────────────────────────────
+// Protected — move an application through its lifecycle
+router.patch('/applications/:id/status', protect, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const allowed = ['Pending', 'Shortlisted', 'Rejected', 'Hired'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ message: `status must be one of: ${allowed.join(', ')}` });
+    }
+
+    const app = await Application.findOneAndUpdate(
+      { _id: req.params.id, employer: req.user.id }, // scoped to owner
+      { $set: { status } },
+      { new: true }
+    ).populate('worker', 'name email');
+
+    if (!app) return res.status(404).json({ message: 'Application not found or not yours.' });
+    return res.status(200).json(app);
+  } catch (err) {
+    console.error('Update application status error:', err);
+    return res.status(500).json({ message: 'Server error.' });
   }
 });
 

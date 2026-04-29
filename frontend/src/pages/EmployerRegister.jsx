@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios";
 import "../styles/EmployerRegister.css";
-import gigshieldLogo from "../assets/Gigshield Logo.png";
+import gigshieldLogo from "../assets/GigShield Logo.png";
 
 export default function EmployerRegister() {
   const navigate = useNavigate();
@@ -46,6 +46,8 @@ export default function EmployerRegister() {
       });
       localStorage.setItem("employer_token", res.data.token);
       localStorage.setItem("employer_user", JSON.stringify(res.data.employer));
+      // ← was "/employer/dashboard" — corrected to match the route in App.jsx
+      //   and the redirect used in EmployerLogin.jsx
       navigate("/employer/dashboard");
     } catch (err) {
       setError(
@@ -68,13 +70,10 @@ export default function EmployerRegister() {
         </div>
 
         <div className="er-panel-content">
-
-          {/* Logo */}
           <div className="er-logo">
             <img src={gigshieldLogo} alt="GigShield" className="er-logo-img" />
           </div>
 
-          {/* Body */}
           <div className="er-panel-body">
             <span className="er-panel-tag">For Employers</span>
 
@@ -87,7 +86,6 @@ export default function EmployerRegister() {
               protected platform built for modern businesses.
             </p>
 
-            {/* Stats */}
             <div className="er-panel-stats">
               <div className="er-panel-stat">
                 <span className="er-panel-stat-val">10k+</span>
@@ -105,7 +103,6 @@ export default function EmployerRegister() {
               </div>
             </div>
 
-            {/* Perks */}
             <div className="er-perks">
               <div className="er-perk">
                 <span className="er-perk-icon">📋</span>
@@ -121,7 +118,6 @@ export default function EmployerRegister() {
               </div>
             </div>
 
-            {/* Trust badges */}
             <div className="er-panel-trust">
               <span>✓ Verified Employers</span>
               <span>✓ GDPR Compliant</span>
@@ -134,14 +130,12 @@ export default function EmployerRegister() {
       {/* ══ RIGHT PANEL ══ */}
       <div className="er-panel--right">
 
-        {/* Mobile-only logo */}
         <div className="er-logo er-logo--mobile">
           <img src={gigshieldLogo} alt="GigShield" className="er-logo-img" />
         </div>
 
         <div className="er-form-wrap">
 
-          {/* Step indicator */}
           <div className="er-steps">
             <div className="er-step-dot er-step-dot--active">1</div>
             <div className="er-step-line er-step-line--active" />
@@ -150,7 +144,6 @@ export default function EmployerRegister() {
             <div className="er-step-dot">3</div>
           </div>
 
-          {/* Header */}
           <div className="er-form-header">
             <h1 className="er-form-title">Create employer account</h1>
             <p className="er-form-sub">
@@ -158,7 +151,6 @@ export default function EmployerRegister() {
             </p>
           </div>
 
-          {/* Error banner */}
           {error && (
             <div className="er-error" role="alert">
               <span className="er-error-icon">⚠</span>
@@ -166,114 +158,74 @@ export default function EmployerRegister() {
             </div>
           )}
 
-          {/* Form */}
           <form onSubmit={handleSubmit} noValidate>
             <div className="er-fields">
 
-              {/* Company name */}
               <div className="er-field">
-                <label htmlFor="companyName" className="er-label">
-                  Company name
-                </label>
+                <label htmlFor="companyName" className="er-label">Company name</label>
                 <div className="er-input-wrap">
                   <span className="er-input-icon">🏢</span>
                   <input
-                    id="companyName"
-                    name="companyName"
-                    type="text"
-                    className="er-input"
-                    placeholder="Acme Deliveries Pvt. Ltd."
-                    value={formData.companyName}
-                    onChange={handleChange}
-                    required
-                    autoComplete="organization"
+                    id="companyName" name="companyName" type="text"
+                    className="er-input" placeholder="Acme Deliveries Pvt. Ltd."
+                    value={formData.companyName} onChange={handleChange}
+                    required autoComplete="organization"
                   />
                 </div>
               </div>
 
-              {/* Work email */}
               <div className="er-field">
-                <label htmlFor="email" className="er-label">
-                  Work email
-                </label>
+                <label htmlFor="email" className="er-label">Work email</label>
                 <div className="er-input-wrap">
                   <span className="er-input-icon">✉</span>
                   <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    className="er-input"
-                    placeholder="hr@company.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    autoComplete="email"
+                    id="email" name="email" type="email"
+                    className="er-input" placeholder="hr@company.com"
+                    value={formData.email} onChange={handleChange}
+                    required autoComplete="email"
                   />
                 </div>
               </div>
 
-              {/* Phone */}
               <div className="er-field">
-                <label htmlFor="phone" className="er-label">
-                  Phone
-                </label>
+                <label htmlFor="phone" className="er-label">Phone</label>
                 <div className="er-input-wrap">
                   <span className="er-input-icon">📞</span>
                   <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    className="er-input"
-                    placeholder="+91 98765 43210"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                    autoComplete="tel"
+                    id="phone" name="phone" type="tel"
+                    className="er-input" placeholder="+91 98765 43210"
+                    value={formData.phone} onChange={handleChange}
+                    required autoComplete="tel"
                   />
                 </div>
               </div>
 
-              {/* Industry */}
               <div className="er-field">
-                <label htmlFor="industry" className="er-label">
-                  Industry
-                </label>
+                <label htmlFor="industry" className="er-label">Industry</label>
                 <div className="er-input-wrap">
                   <span className="er-input-icon">🏭</span>
                   <input
-                    id="industry"
-                    name="industry"
-                    type="text"
-                    className="er-input"
-                    placeholder="delivery, logistics, food, retail"
-                    value={formData.industry}
-                    onChange={handleChange}
+                    id="industry" name="industry" type="text"
+                    className="er-input" placeholder="delivery, logistics, food, retail"
+                    value={formData.industry} onChange={handleChange}
                     autoComplete="organization-title"
                   />
                 </div>
               </div>
 
-              {/* Password */}
               <div className="er-field">
-                <label htmlFor="password" className="er-label">
-                  Password
-                </label>
+                <label htmlFor="password" className="er-label">Password</label>
                 <div className="er-input-wrap">
                   <span className="er-input-icon">🔑</span>
                   <input
-                    id="password"
-                    name="password"
+                    id="password" name="password"
                     type={showPassword ? "text" : "password"}
-                    className="er-input"
-                    placeholder="Min. 6 characters"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    autoComplete="new-password"
+                    className="er-input" placeholder="Min. 6 characters"
+                    value={formData.password} onChange={handleChange}
+                    required autoComplete="new-password"
                   />
                   <button
-                    type="button"
-                    className="er-eye"
+                    type="button" className="er-eye"
                     onClick={() => setShowPassword((p) => !p)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
@@ -282,27 +234,19 @@ export default function EmployerRegister() {
                 </div>
               </div>
 
-              {/* Confirm password */}
               <div className="er-field">
-                <label htmlFor="confirm" className="er-label">
-                  Confirm password
-                </label>
+                <label htmlFor="confirm" className="er-label">Confirm password</label>
                 <div className="er-input-wrap">
                   <span className="er-input-icon">🔑</span>
                   <input
-                    id="confirm"
-                    name="confirm"
+                    id="confirm" name="confirm"
                     type={showConfirm ? "text" : "password"}
-                    className="er-input"
-                    placeholder="••••••••"
-                    value={formData.confirm}
-                    onChange={handleChange}
-                    required
-                    autoComplete="new-password"
+                    className="er-input" placeholder="••••••••"
+                    value={formData.confirm} onChange={handleChange}
+                    required autoComplete="new-password"
                   />
                   <button
-                    type="button"
-                    className="er-eye"
+                    type="button" className="er-eye"
                     onClick={() => setShowConfirm((p) => !p)}
                     aria-label={showConfirm ? "Hide password" : "Show password"}
                   >
@@ -312,40 +256,25 @@ export default function EmployerRegister() {
               </div>
             </div>
 
-            {/* Submit */}
             <div className="er-submit-wrap">
-              <button
-                type="submit"
-                className="er-btn-primary"
-                disabled={loading}
-              >
+              <button type="submit" className="er-btn-primary" disabled={loading}>
                 {loading ? (
-                  <>
-                    <span className="er-spinner" />
-                    Creating account…
-                  </>
+                  <><span className="er-spinner" />Creating account…</>
                 ) : (
-                  <>
-                    Create employer account
-                  </>
+                  "Create employer account"
                 )}
               </button>
             </div>
           </form>
 
-          {/* Footer links */}
           <div className="er-footer">
             <p className="er-footer-line">
               Already have an employer account?{" "}
-              <Link to="/employer/login" className="er-footer-link">
-                Sign in
-              </Link>
+              <Link to="/login/employer" className="er-footer-link">Sign in</Link>
             </p>
             <p className="er-footer-line">
               Worker?{" "}
-              <Link to="/register" className="er-footer-link">
-                Worker sign-up
-              </Link>
+              <Link to="/register" className="er-footer-link">Worker sign-up</Link>
             </p>
           </div>
 
