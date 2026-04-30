@@ -27,8 +27,15 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'All fields are required.' });
     }
 
-    const exists = await Admin.findOne({ email });
-    if (exists) {
+    // 1) Check if ANY admin already exists
+    const existingAdmin = await Admin.findOne();
+    if (existingAdmin) {
+      return res.status(400).json({ message: 'Admin already exists. Only one admin account is allowed.' });
+    }
+
+    // 2) Also guard by email (defensive)
+    const existsByEmail = await Admin.findOne({ email });
+    if (existsByEmail) {
       return res.status(400).json({ message: 'Admin already exists.' });
     }
 
@@ -49,36 +56,6 @@ router.post('/register', async (req, res) => {
   } catch (err) {
     console.error('Admin register error:', err);
     return res.status(500).json({ message: 'Failed to register admin.' });
-  }
-});
-
-/**
- * POST /api/admin/login
- * Login existing admin
- */
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const admin = await Admin.findOne({ email });
-    if (!admin) {
-      return res.status(400).json({ message: 'Invalid admin credentials.' });
-    }
-
-    const ok = await bcrypt.compare(password, admin.passwordHash);
-    if (!ok) {
-      return res.status(400).json({ message: 'Invalid admin credentials.' });
-    }
-
-    const adminResponse = admin.toObject();
-    delete adminResponse.passwordHash;
-
-    const token = generateToken(admin._id);
-
-    return res.json({ token, user: adminResponse });
-  } catch (err) {
-    console.error('Admin login error:', err);
-    return res.status(500).json({ message: 'Failed to login admin.' });
   }
 });
 
