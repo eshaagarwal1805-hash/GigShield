@@ -371,10 +371,6 @@ export default function GigShieldDashboard() {
             id: Date.now(), type: "SHIFT_END", icon: "logout",
             title: "Shift Ended", message: `Worked ${msToHHMM(workedMs)}`,
             read: false, timestamp: now.toISOString(),
-          }, {
-            id: Date.now() + 1, type: "SHIFT_TOTAL", icon: "payments",
-            title: "Today's Earnings", message: `Total earned: ₹${todayEarnings.toFixed(2)}`,
-            read: false, timestamp: now.toISOString(),
           }, ...n].slice(0, 50)
         );
       } else {

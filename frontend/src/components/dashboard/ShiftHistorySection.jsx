@@ -24,24 +24,25 @@ function fmtDate(iso) {
   });
 }
 
+// Cap at 24 hours — anything more is bad/test data
 function getShiftMs(gig) {
   if (!gig.startTime || !gig.endTime) return 0;
-  return new Date(gig.endTime) - new Date(gig.startTime);
+  const ms = new Date(gig.endTime) - new Date(gig.startTime);
+  return ms > 0 && ms <= 24 * 60 * 60 * 1000 ? ms : 0;
 }
 
-// Get last 5 days labels and worked ms per day
+// Get last 7 days labels and worked ms per day
 function getLast7Days(gigs) {
   const days = [];
-  // Start from last Sunday
   const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=Sun, 6=Sat
+  const dayOfWeek = today.getDay();
   const lastSunday = new Date(today);
   lastSunday.setDate(today.getDate() - dayOfWeek);
 
   for (let i = 0; i < 7; i++) {
     const d = new Date(lastSunday);
     d.setDate(lastSunday.getDate() + i);
-    const label = d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" });
+    const label   = d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" });
     const dateStr = d.toDateString();
     const totalMs = gigs
       .filter((g) => g.endTime && new Date(g.endTime).toDateString() === dateStr)
@@ -52,20 +53,20 @@ function getLast7Days(gigs) {
 }
 
 export default function ShiftHistorySection({ completedGigs: propGigs, loading: propLoading }) {
-  const [gigs, setGigs] = useState(propGigs || []);
-const [loading, setLoading] = useState(propLoading);
+  const [gigs,    setGigs]    = useState(propGigs || []);
+  const [loading, setLoading] = useState(propLoading);
 
-useEffect(() => {
-  setGigs(propGigs || []);
-  setLoading(false);
-}, [propGigs]);
+  useEffect(() => {
+    setGigs(propGigs || []);
+    setLoading(false);
+  }, [propGigs]);
 
-  const last7Days = getLast7Days(gigs);
-const maxMs = Math.max(...last7Days.map((d) => d.totalMs), 1);
-const totalAllDays = last7Days.reduce((sum, d) => sum + d.totalMs, 0);
-const highestDay = totalAllDays > 0
-  ? last7Days.reduce((max, d) => d.totalMs > max.totalMs ? d : max, last7Days[0])
-  : null;
+  const last7Days    = getLast7Days(gigs);
+  const maxMs        = Math.max(...last7Days.map((d) => d.totalMs), 1);
+  const totalAllDays = last7Days.reduce((sum, d) => sum + d.totalMs, 0);
+  const highestDay   = totalAllDays > 0
+    ? last7Days.reduce((max, d) => d.totalMs > max.totalMs ? d : max, last7Days[0])
+    : null;
 
   if (loading) {
     return (
@@ -87,14 +88,14 @@ const highestDay = totalAllDays > 0
           </div>
           {highestDay && (
             <span style={{
-    fontSize: 11, fontWeight: 600,
-    color: "var(--db-primary)",
-    background: "rgba(42,108,44,0.08)",
-    padding: "4px 10px", borderRadius: 20,
-  }}>
-    Peak: {highestDay.label}
-  </span>
-)}
+              fontSize: 11, fontWeight: 600,
+              color: "var(--db-primary)",
+              background: "rgba(42,108,44,0.08)",
+              padding: "4px 10px", borderRadius: 20,
+            }}>
+              Peak: {highestDay.label}
+            </span>
+          )}
         </div>
 
         {/* Bar chart */}
@@ -107,8 +108,8 @@ const highestDay = totalAllDays > 0
           marginBottom: 8,
         }}>
           {last7Days.map((day) => {
-              const isHighest = day.dateStr === highestDay?.dateStr && day.totalMs > 0;
-            const isToday = day.dateStr === new Date().toDateString();
+            const isHighest = day.dateStr === highestDay?.dateStr && day.totalMs > 0;
+            const isToday   = day.dateStr === new Date().toDateString();
             const heightPct = maxMs > 0 ? (day.totalMs / maxMs) * 100 : 0;
 
             return (
@@ -166,13 +167,10 @@ const highestDay = totalAllDays > 0
       <div className="db-card">
         <div className="db-card-header">
           <div>
-          <span className="db-card-eyebrow">Today's Shifts</span>
-<h3 className="db-card-title">Recent Shifts</h3>
+            <span className="db-card-eyebrow">Today's Shifts</span>
+            <h3 className="db-card-title">Recent Shifts</h3>
           </div>
-          <span style={{
-            fontSize: 11, color: "var(--db-muted)",
-            fontWeight: 600,
-          }}>
+          <span style={{ fontSize: 11, color: "var(--db-muted)", fontWeight: 600 }}>
             {gigs.length} total
           </span>
         </div>
@@ -215,21 +213,12 @@ const highestDay = totalAllDays > 0
 
                   {/* Shift details */}
                   <div style={{ flex: 1 }}>
-                    <div style={{
-                      display: "flex", alignItems: "center",
-                      gap: 8, marginBottom: 4,
-                    }}>
-                      <span style={{
-                        fontSize: 13, fontWeight: 700,
-                        color: "var(--db-text)",
-                      }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--db-text)" }}>
                         {fmtTime(g.startTime)} → {fmtTime(g.endTime)}
                       </span>
                     </div>
-                    <div style={{
-                      display: "flex", gap: 12,
-                      alignItems: "center",
-                    }}>
+                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                       <span style={{
                         fontSize: 11, color: "var(--db-muted)",
                         display: "flex", alignItems: "center", gap: 3,
@@ -249,7 +238,7 @@ const highestDay = totalAllDays > 0
                     </div>
                   </div>
 
-                  {/* Total worked badge */}
+                  {/* Duration badge */}
                   <div style={{
                     background: shiftMs > 0 ? "rgba(42,108,44,0.08)" : "var(--db-bg)",
                     border: "1px solid var(--db-border)",

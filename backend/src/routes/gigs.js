@@ -5,6 +5,20 @@ const Dashboard = require('../models/Dashboard');
 const Transaction = require('../models/Transaction');
 const { protect } = require('../middleware/authMiddleware');
 
+// ── Helper: upsert dashboard fields ──────────────────────────
+const upsertDashboard = async (userId, fields) => {
+  const { $inc, ...setFields } = fields;
+  const update = {};
+  if (Object.keys(setFields).length) update.$set = setFields;
+  if ($inc) update.$inc = $inc;
+
+  await Dashboard.findOneAndUpdate(
+    { userId },
+    update,
+    { upsert: true, new: true }
+  );
+};
+
 // POST /api/gigs/start
 router.post('/start', protect, async (req, res) => {
   try {
@@ -12,22 +26,25 @@ router.post('/start', protect, async (req, res) => {
     if (existing) {
       return res.status(400).json({ message: 'You already have an active shift.' });
     }
+
     const gig = await Gig.create({
-      userId: req.user._id,
-      title: 'Shift',
-      status: 'active',
+      userId:    req.user._id,
+      title:     'Shift',
+      status:    'active',
       startTime: new Date(),
       location: {
-        type: 'Point',
+        type:        'Point',
         coordinates: req.body.location?.coordinates || [0, 0],
-        label: req.body.location?.label || '',
+        label:       req.body.location?.label || '',
       },
     });
+
     await upsertDashboard(req.user._id, {
-  activeGigId: gig._id,
-  lastActiveDate: new Date(),
-  $inc: { totalGigs: 1 },
-  });
+      activeGigId:    gig._id,
+      lastActiveDate: new Date(),
+      $inc: { totalGigs: 1 },
+    });
+
     res.status(201).json(gig);
   } catch (err) {
     console.error('Start shift error:', err);
@@ -40,22 +57,26 @@ router.post('/stop', protect, async (req, res) => {
   try {
     const gig = await Gig.findOne({ userId: req.user._id, status: 'active' });
     if (!gig) return res.status(404).json({ message: 'No active shift found.' });
+
+    const now = new Date();
+    const shiftMs = now - new Date(gig.startTime);
+    const maxShiftMs = 24 * 60 * 60 * 1000; // 24 hours
+
+    // Sanity check — if shift started more than 24h ago, cap startTime
+    if (shiftMs > maxShiftMs) {
+      gig.startTime = new Date(now - maxShiftMs);
+    }
+
     gig.status   = 'completed';
-    gig.endTime  = new Date();
+    gig.endTime  = now;
     gig.earnings = req.body.earnings || 0;
     await gig.save();
+
     await upsertDashboard(req.user._id, {
       activeGigId: null,
       $inc: { completedGigs: 1, totalEarnings: gig.earnings },
     });
-    await Transaction.create({
-      userId: req.user._id,
-      relatedGigId: gig._id,
-      amount: gig.earnings,
-      type: 'credit',
-      source: gig.platform || 'General Gig',
-      status: 'verified',
-    });
+
     res.json(gig);
   } catch (err) {
     console.error('Stop shift error:', err);
@@ -67,8 +88,8 @@ router.post('/stop', protect, async (req, res) => {
 router.get('/history', protect, async (req, res) => {
   try {
     const gigs = await Gig.find({
-      userId: req.user._id,
-      status: 'completed',
+      userId:  req.user._id,
+      status:  'completed',
       endTime: { $ne: null },
     }).sort({ startTime: -1 }).limit(50);
     res.json(gigs);
@@ -94,22 +115,26 @@ router.patch('/:id/complete', protect, async (req, res) => {
   try {
     const gig = await Gig.findById(req.params.id);
     if (!gig) return res.status(404).json({ message: 'Gig not found' });
+
     gig.status   = 'completed';
     gig.endTime  = new Date();
     gig.earnings = earnings;
     await gig.save();
+
     await upsertDashboard(req.user._id, {
       activeGigId: null,
       $inc: { completedGigs: 1, totalEarnings: earnings },
     });
+
     await Transaction.create({
-      userId: req.user._id,
+      userId:       req.user._id,
       relatedGigId: gig._id,
-      amount: earnings,
-      type: 'credit',
-      source: gig.platform || 'General Gig',
-      status: 'verified',
+      amount:       earnings,
+      type:         'credit',
+      source:       gig.platform || 'General Gig',
+      status:       'verified',
     });
+
     res.json(gig);
   } catch (err) {
     res.status(500).json({ message: err.message });
